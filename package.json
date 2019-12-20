@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "iced ./server.coffee"
+    "start": "iced ./server.coffee",
+    "dev": "./loop.sh ./server.coffee --watch"
   },
   "repository": {
     "type": "git",

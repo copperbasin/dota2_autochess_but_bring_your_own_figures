@@ -16,6 +16,6 @@ module.exports =
       if @state.waiting
         div {class: "background_pad"}
           div "Waiting for players"
-      else
-        
+      
+      Chessboard_place {}
   

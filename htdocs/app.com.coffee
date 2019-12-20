@@ -2,7 +2,7 @@ module.exports =
   state : {
     id  : "bg1"
     last_url : ""
-    router : "main"
+    router : localStorage.router_start or "main"
     bg1 : {
       opacity: 0
     }

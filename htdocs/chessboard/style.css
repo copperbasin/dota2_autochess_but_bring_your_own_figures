@@ -1,0 +1,23 @@
+.table_chessboard {
+  
+}
+
+.table_chessboard td {
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.table_chessboard td  img {
+  position: relative;
+  top: 6px;
+}
+
+.table_chessboard .odd {
+  background : #555;
+}
+
+.table_chessboard .even {
+  background : #eee;
+}
