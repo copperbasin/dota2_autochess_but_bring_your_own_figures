@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "iced ./server.coffee"
   },
   "repository": {
     "type": "git",
@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/copperbasin/dota2_autochess_but_bring_your_own_figures#readme",
   "dependencies": {
+    "iced-coffee-script": "^108.0.14",
     "webcom": "github:hu2prod/webcom",
     "webcom-client-plugin-base": "github:hu2prod/webcom-client-plugin-base",
     "webcom-engine-vendor": "github:hu2prod/webcom-engine-vendor"
