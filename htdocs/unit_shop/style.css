@@ -1,0 +1,11 @@
+.shop_table {
+  font-size: 16px;
+}
+
+.shop_table .check_pass {
+  background: #ff0;
+}
+
+.shop_table .check_cant_afford {
+  background: #ccc;
+}

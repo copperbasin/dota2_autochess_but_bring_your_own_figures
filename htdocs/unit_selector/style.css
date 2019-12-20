@@ -1,0 +1,12 @@
+.unit_selecor_table > tbody > tr > td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.unit_selecor_table .check_pass {
+  background: #ff0;
+}
+
+.unit_selecor_table .bought {
+  opacity: 0.15;
+}

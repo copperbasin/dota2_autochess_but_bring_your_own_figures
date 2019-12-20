@@ -2,6 +2,7 @@ body, html {
   height: 100%;
   margin: 0;
   overflow:hidden;
+  font-family: HypatiaSansPro-Regular;
 }
 
 #mount_point {
@@ -24,6 +25,10 @@ body, html {
   z-index: -1;
 }
 
+.reset_font {
+  font-size: 16px;
+}
+
 .center {
   text-align: center;
 }
@@ -36,11 +41,15 @@ body, html {
   margin-left : auto;
   margin-right: auto;
   padding: 20px;
-  width : 50%;
+  width : 1000px;
   border-radius: 2px;
   background: #eee;
   font-family: HypatiaSansPro-Regular;
   font-size: 26px;
+}
+
+.h_layout_table > tbody > tr > td {
+  vertical-align: top;
 }
 
 @font-face {
@@ -56,4 +65,9 @@ body, html {
 @font-face {
   font-family: HypatiaSansPro-Bold;
   src: url("font/HypatiaSansPro-Bold.otf") format("opentype");
+}
+
+/* RE-style not default components */
+.tab button {
+  height: 40px;
 }

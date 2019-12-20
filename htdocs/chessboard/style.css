@@ -1,15 +1,18 @@
 .table_chessboard {
-  
+  border-spacing: 0px;
+  border-collapse: separate;
+  border: 1px solid #111;
 }
 
-.table_chessboard td {
-  width: 40px;
-  height: 40px;
+.table_chessboard > tbody > tr > td  {
+  width: 50px;
+  height: 50px;
   text-align: center;
   vertical-align: middle;
+  padding: 0px;
 }
 
-.table_chessboard td  img {
+.table_chessboard > tbody > tr > td   img {
   position: relative;
   top: 6px;
 }
@@ -20,4 +23,20 @@
 
 .table_chessboard .even {
   background : #eee;
+}
+
+
+.table_chessboard .spacer {
+  border-top: 1px solid #111;
+  height: 25px;
+}
+
+.table_chessboard .spare {
+  background : #999;
+  border: 1px solid #111;
+}
+
+.table_chessboard .red_spare {
+  background : #e99;
+  border: 1px solid #f11;
 }
