@@ -1,0 +1,17 @@
+.start_button {
+  width : 200px;
+  height: 50px;
+  font-size: 26px;
+  background-color: #ff1;
+  color: #111;
+  font-family: HypatiaSansPro-Semibold;
+  border: 5px #555 solid;
+  border-radius: 3px;
+  transition: 0.3s;
+}
+
+.start_button:hover {
+  border: 5px #111 solid;
+  background-color: #FFFF60;
+  color: #000;
+}

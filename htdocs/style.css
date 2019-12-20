@@ -1,0 +1,59 @@
+body, html {
+  height: 100%;
+  margin: 0;
+  overflow:hidden;
+}
+
+#mount_point {
+  height: 100%;
+}
+
+#wrap {
+  height: 100%;
+}
+
+#bg1, #bg2 {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  -webkit-transition: opacity 2s ease-in-out;
+  transition: opacity 2s ease-in-out;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  z-index: -1;
+}
+
+.center {
+  text-align: center;
+}
+
+.pad_top {
+  padding-top: 50px;
+}
+
+.background_pad {
+  margin-left : auto;
+  margin-right: auto;
+  padding: 20px;
+  width : 50%;
+  border-radius: 2px;
+  background: #eee;
+  font-family: HypatiaSansPro-Regular;
+  font-size: 26px;
+}
+
+@font-face {
+  font-family: HypatiaSansPro-Regular;
+  src: url("font/HypatiaSansPro-Regular.otf") format("opentype");
+}
+
+@font-face {
+  font-family: HypatiaSansPro-Semibold;
+  src: url("font/HypatiaSansPro-Semibold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: HypatiaSansPro-Bold;
+  src: url("font/HypatiaSansPro-Bold.otf") format("opentype");
+}
