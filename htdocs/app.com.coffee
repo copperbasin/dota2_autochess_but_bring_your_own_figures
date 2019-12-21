@@ -42,5 +42,7 @@ module.exports =
           Scene_queue {}
         when "match"
           Scene_match {}
+        when "shop"
+          Scene_shop {}
       
   

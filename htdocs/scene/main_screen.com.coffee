@@ -4,9 +4,16 @@ module.exports =
   
   render : ()->
     div {class: "center pad_top"}
-      Start_button {
-        label : "Start game"
-        on_click : ()=>
-          router_set "queue"
-      }
+      div
+        Start_button {
+          label : "Start game"
+          on_click : ()=>
+            router_set "queue"
+        }
+      div
+        Start_button {
+          label : "Shop"
+          on_click : ()=>
+            router_set "shop"
+        }
   

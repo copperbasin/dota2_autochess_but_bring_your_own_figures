@@ -1,0 +1,1 @@
+window.figure_cost = 10

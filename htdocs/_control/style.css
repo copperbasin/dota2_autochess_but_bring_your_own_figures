@@ -16,6 +16,11 @@
   color: #000;
 }
 
+button:disabled, button[disabled], button:disabled:hover, button[disabled]:hover {
+  background-color: #999;
+  border: 0;
+}
+
 .nav_button {
   background-color: #ff1;
   font-size: 26px;
