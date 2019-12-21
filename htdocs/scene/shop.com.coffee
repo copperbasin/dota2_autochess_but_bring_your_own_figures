@@ -7,6 +7,15 @@ module.exports =
   render : ()->
     div {class: "center pad_top"}
       div {class: "background_pad"}
+        div {
+          style:
+            textAlign:"left"
+            position: "abosolute"
+        }
+          Back_button {
+            on_click : ()=>
+              router_set "main"
+          }
         div "Your ton balance #{@state.balance} gramm"
         Unit_shop {
           # костыль
