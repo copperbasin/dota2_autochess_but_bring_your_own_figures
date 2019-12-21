@@ -1,8 +1,24 @@
 module.exports =
   state :
-    balance : 10
+    balance : -1
+    address : "???"
+  
+  listener_balance : null
+  listener_address : null
   mount : ()->
     bg_change "img/shop_bg.jpg"
+    @set_state {
+      balance: ton.balance
+      address: ton.address
+    }
+    ton.on "balance", @listener_balance = (balance)=>
+      @set_state {balance}
+    ton.on "address", @listener_address = (address)=>
+      @set_state {address}
+    
+  unmount : ()->
+    ton.off "balance", @listener_address
+    ton.off "address", @listener_address
   
   render : ()->
     div {class: "center pad_top"}
@@ -16,7 +32,10 @@ module.exports =
             on_click : ()=>
               router_set "main"
           }
-        div "Your ton balance #{@state.balance} gramm"
+        balance = @state.balance
+        balance = '?' if balance == -1
+        div "Address: #{@state.address}"
+        div "Balance: #{balance} gramm"
         Unit_shop {
           # костыль
           available_unit_list : []

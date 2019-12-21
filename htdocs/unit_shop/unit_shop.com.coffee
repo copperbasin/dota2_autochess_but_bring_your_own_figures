@@ -5,6 +5,7 @@ module.exports =
     filter_class_list   : []
     filter_spec_list    : []
     
+    balance : -1
     # key type
     # player have
     player_unit_hash : {} # get from smart contract
