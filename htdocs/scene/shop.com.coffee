@@ -2,7 +2,7 @@ module.exports =
   state :
     balance : 10
   mount : ()->
-    bg_change "img/knight_bg.jpg"
+    bg_change "img/shop_bg.jpg"
   
   render : ()->
     div {class: "center pad_top"}
