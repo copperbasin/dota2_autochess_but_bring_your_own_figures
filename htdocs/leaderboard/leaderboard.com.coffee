@@ -6,6 +6,10 @@ module.exports =
           th "#"
           th {
             style:
+              width: 50
+          }, "Lvl"
+          th {
+            style:
               width: 100
           }, "HP"
           th {
@@ -16,7 +20,11 @@ module.exports =
         for player, idx in @props.player_list
           tr
             td idx+1
-            td 
+            td
+              div {
+                class : "lvl_badge center_pad"
+              }, player.level
+            td
               Leaderboard_bar {
                 value : player.hp
                 max   : 100

@@ -33,6 +33,11 @@ body, html {
   text-align: center;
 }
 
+.center_pad {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .pad_top {
   padding-top: 50px;
 }

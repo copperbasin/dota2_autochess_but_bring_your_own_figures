@@ -15,3 +15,9 @@
   background-color: #FFFF60;
   color: #000;
 }
+
+.nav_button {
+  background-color: #ff1;
+  font-size: 26px;
+  font-family: HypatiaSansPro-Semibold;
+}

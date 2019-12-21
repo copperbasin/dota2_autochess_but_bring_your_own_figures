@@ -1,3 +1,17 @@
+.unit_selecor_table_wrap {
+  width: 100%;
+}
+
+.unit_selecor_table_wrap  > tbody > tr > td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.unit_selecor_table {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .unit_selecor_table > tbody > tr > td {
   text-align: center;
   vertical-align: middle;
@@ -9,4 +23,8 @@
 
 .unit_selecor_table .bought {
   opacity: 0.15;
+}
+
+.unit_selecor_button_place {
+  height: 50px;
 }

@@ -47,6 +47,7 @@ module.exports =
         hp    : 100
         gold  : 10
         unit_list : unit_list
+        level : 5
       }
     ]
     
@@ -65,15 +66,21 @@ module.exports =
             tr
               td {
                 style :
-                  width : "50%"
+                  width : "45%"
               }
+                Match_player_stats {
+                  hp    : 50
+                  gold  : 50
+                  exp   : 50
+                  level : 5
+                }
                 Chessboard_place {
                   unit_list       : @unit_list
                   unit_spare_list : []
                 }
               td {
                 style :
-                  width : "50%"
+                  width : "55%"
               }
                 Tab_bar {
                   hash : {
