@@ -20,6 +20,18 @@ Docker is highly recommended
     # you need fill your TON wallet inside docker container
     # autochess is 8-player game. You need 7 friends
 
+## But wait. How to create wallet and fill balance? ##
+
+    # go inside Docker
+    ./ssh.sh
+    # create wallet keys and other stuff
+    ./sh_scripts/01_create_wallet.sh
+    # seek Non-bounceable address (for init): ___
+    # fill balance with @test_ton_bot
+    # wait some time
+    # run broadcast
+    ./sh_scripts/02_broadcast_wallet.sh
+
 ## Development (You are dev and feeling lucky) ##
 ### How to launch front-end? ###
 
@@ -38,7 +50,7 @@ Docker is highly recommended
     # use this first
     ./_ss.sh
     # then
-    screen -R ton
+    screen -R lite-client
     # OR
     screen -R server
 

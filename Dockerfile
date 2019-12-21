@@ -31,12 +31,22 @@ RUN cd ton/liteclient-build && cmake --build . --target lite-client
 RUN cd ton/liteclient-build && cmake --build . --target fift
 RUN cd ton/liteclient-build && cmake --build . --target func
 
-RUN cp ton/liteclient-build/crypto/fift . && \
-  cp ton/liteclient-build/crypto/func . && \
-  cp ton/liteclient-build/lite-client/lite-client .
+RUN cp ton/liteclient-build/crypto/fift /bin && \
+  cp ton/liteclient-build/crypto/func /bin && \
+  cp ton/liteclient-build/lite-client/lite-client /bin
 # ###################################################################################################
 # APP
 # ###################################################################################################
+
+RUN echo "export FIFTPATH=/src/ton/crypto/fift/lib" >> ~/.bashrc
+
+VOLUME /src/build
+
+
+# Keep names from Dich5 repo
+COPY fift_scripts fift_scripts
+COPY contracts contracts
+COPY sh_scripts sh_scripts
 
 COPY htdocs htdocs
 COPY package.json .
@@ -50,5 +60,6 @@ COPY ton-global.config .
 COPY _ss.sh .
 
 RUN source ~/.nvm/nvm.sh && npm ci
+RUN chmod +x ./sh_scripts/*
 
 CMD /bin/bash ./wrapper.sh
