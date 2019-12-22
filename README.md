@@ -77,4 +77,5 @@ Smart contract id is hardcoded in server.coffee. You can change it.
 
 ## Gears inside ##
 
-  * https://github.com/vird/ff_rts (also ff_rts can run on smart contracts with cheap gas and/or wasm-capable engines)
+  * https://github.com/vird/ff_rts (also ff_rts can run on smart contracts with cheap gas and/or wasm-capable engines, see ff_emulator. True emulator was used here)
+  * https://github.com/hu2prod/webcom (it's just React but with iced-coffee-script and some component sugar. No webpack, no 10MB node_modules inside your browser)
