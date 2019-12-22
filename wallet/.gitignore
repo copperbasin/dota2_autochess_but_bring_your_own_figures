@@ -1,2 +1,4 @@
-new-wallet*
-wallet-code.fif
+*.fif
+*.boc
+*.pk
+*.addr

@@ -1,0 +1,73 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+variable updated_storage
+variable amount
+variable ext_msg_body
+variable int_msg_body
+variable int_message
+
+{ { ."success " cr } { "test failed" abort } cond } : test_ret_value
+{ swap 0= test_ret_value } : test_code
+{ { ."success " cr } { " contract state error: " abort } cond } : test_state
+100000 constant timeout
+true constant bounce
+"build/new-game" constant file-base
+file-base +".addr" load-address 2constant dest_addr
+
+"build/game-code.fif" include <s constant code
+
+<b 
+    dictnew dict,
+    dictnew dict,
+    dictnew dict,
+    dictnew dict,
+    0 32 u,
+    file-base +".pk" load-generate-keypair constant game_pk B, 
+b> constant initial_storage
+
+// [ magic:0x076ef1ea actions:Integer msgs_sent:Integer
+// unixtime:Integer block_lt:Integer trans_lt:Integer
+// rand_seed:Integer balance_remaining:[Integer (Maybe Cell)]
+// myself:MsgAddressInt global_config:(Maybe Cell)
+// ] = SmartContractInfo;
+
+0 tuple 0x076ef1ea ,
+0 , 0 , 
+1570470873 ,
+1 , 1 , 0 , 
+0 tuple 9223372036854775807 , dictnew , , 
+dest_addr nip , dictnew , 
+1 tuple 
+constant c7
+
+// test # 0 external message without options
+
+<b 0 32 u, now timeout + 32 u, 0 32 u, b>
+dup hashu game_pk ed25519_sign_uint
+<b swap B, swap <s s, b>
+<s ext_msg_body !  
+
+ext_msg_body @ recv_external code initial_storage c7 runvmctx
+test_code
+dup updated_storage !
+boc>B <b 
+    dictnew dict,
+    dictnew dict,
+    dictnew dict,
+    dictnew dict,
+    1 32 u,
+    file-base +".pk" load-generate-keypair constant game_pk B, 
+b>  boc>B B= test_state
+
+// test # 1 intenal message without body
+0 amount !
+<b b> 
+<s int_msg_body !  
+
+<b b{00} s, bounce 1 i, b{000100} s, dest_addr addr, amount @ Gram, 0 9 64 32 + + 1+ u, int_msg_body @ s, b>  int_message !
+
+amount @ int_message @ int_msg_body @ recv_internal code initial_storage c7 runvmctx
+test_code
+boc>B initial_storage boc>B B= test_state

@@ -1,0 +1,273 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+variable updated_storage
+variable amount
+variable int_msg_body
+variable int_message
+variable unit_id 
+variable unit_level 
+variable units_counter 
+variable prices 
+variable unit_price_lists
+variable user_list
+variable units
+variable idx
+
+74682 constant getqueuelen
+
+{ <b swap 8 u, swap 16 u, b> <s } : create-units-per-level
+{ units @ 4 udict!+ not abort"cannot add user to dictionary" units ! } : add-units-per-level
+{ <b swap 32 u, b> <s } : create-price
+{ prices @ 8 udict!+ not abort"cannot add price to dictionary" prices ! } : add-price
+{ <b swap dict, b> <s } : create-unit-prices
+{ unit_price_lists @ 16 udict!+ not abort"cannot add unit lists to dictionary" unit_price_lists ! } : add-units-list
+
+{ { ."success " cr } { "test failed" abort } cond } : test_ret_value
+{ swap 0= test_ret_value } : test_code
+{ { ."success " cr } { " contract state error: " abort } cond } : test_state
+true constant bounce
+"build/new-game" constant file-base
+file-base +".addr" load-address 2constant dest_addr
+"build/game-code.fif" include <s constant code
+
+dictnew unit_price_lists ! // dictionary with prices for all unit and levels
+dictnew prices ! // dictionary with prices for each level for one specific unit
+4 create-price 
+0 add-price 
+prices @ create-unit-prices
+0 add-units-list
+
+dictnew prices ! 
+231 create-price 
+1 add-price 
+prices @ create-unit-prices
+1 add-units-list
+
+dictnew prices ! 
+400 create-price 
+2 add-price 
+prices @ create-unit-prices
+2 add-units-list
+
+dictnew prices ! 
+2332 create-price 
+3 add-price 
+prices @ create-unit-prices
+3 add-units-list
+
+dictnew prices ! 
+2332 create-price 
+4 add-price 
+prices @ create-unit-prices
+4 add-units-list
+
+dictnew prices ! 
+2332 create-price 
+5 add-price 
+prices @ create-unit-prices
+5 add-units-list
+
+<b 
+    dictnew dict,
+    dictnew dict,
+    unit_price_lists @ dict,
+    dictnew dict,
+    0 32 u,
+    file-base +".pk" load-generate-keypair constant game_pk B, 
+b> constant initial_storage
+
+0 tuple 0x076ef1ea ,
+0 , 0 , 
+1570470873 ,
+1 , 1 , 0 , 
+0 tuple 9223372036854775807 , dictnew , , 
+dest_addr nip , dictnew , 
+1 tuple 
+constant c7
+
+// prepare user list 
+1000 amount !
+0 unit_id !
+0 unit_level !
+8 units_counter !
+<b 0xaaeeee 32 u, 0 64 u, unit_id @ 16 u, unit_level @ 8 u, units_counter @ 16 u,  b> 
+<s int_msg_body !  
+
+<b b{00} s, bounce 1 i, b{0100} s, -1 <b 1 32 u, b> hashu addr, b{100} s, dest_addr addr, amount @ Gram, 0 9 64 32 + + 1+ u, int_msg_body @ s, b>  int_message !
+amount @ int_message @ int_msg_body @ recv_internal code initial_storage c7 runvmctx
+test_code
+updated_storage !
+
+{ <b b{00} s, bounce 1 i, b{0100} s, -1 <b idx @ 32 u, b> hashu addr, b{100} s, dest_addr addr, amount @ Gram, 0 9 64 32 + + 1+ u, int_msg_body @ s, b>  int_message !
+amount @ int_message @ int_msg_body @ recv_internal code updated_storage @ c7 runvmctx
+test_code
+updated_storage ! } : send-request
+
+2 idx !
+send-request
+3 idx !
+send-request
+4 idx !
+send-request
+5 idx !
+send-request
+6 idx !
+send-request
+7 idx !
+send-request
+8 idx !
+send-request
+
+10000000 amount !
+1 unit_id !
+1 unit_level !
+8 units_counter !
+<b 0xaaeeee 32 u, 0 64 u, unit_id @ 16 u, unit_level @ 8 u, units_counter @ 16 u,  b> 
+<s int_msg_body !  
+
+1 idx !
+send-request
+2 idx !
+send-request
+3 idx !
+send-request
+4 idx !
+send-request
+5 idx !
+send-request
+6 idx !
+send-request
+7 idx !
+send-request
+8 idx !
+send-request
+
+
+10000000 amount !
+2 unit_id !
+2 unit_level !
+8 units_counter !
+<b 0xaaeeee 32 u, 0 64 u, unit_id @ 16 u, unit_level @ 8 u, units_counter @ 16 u,  b> 
+<s int_msg_body !  
+
+1 idx !
+send-request
+2 idx !
+send-request
+3 idx !
+send-request
+4 idx !
+send-request
+5 idx !
+send-request
+6 idx !
+send-request
+7 idx !
+send-request
+8 idx !
+send-request
+
+
+10000000 amount !
+3 unit_id !
+3 unit_level !
+8 units_counter !
+<b 0xaaeeee 32 u, 0 64 u, unit_id @ 16 u, unit_level @ 8 u, units_counter @ 16 u,  b> 
+<s int_msg_body !  
+
+
+1 idx !
+send-request
+2 idx !
+send-request
+3 idx !
+send-request
+4 idx !
+send-request
+5 idx !
+send-request
+6 idx !
+send-request
+7 idx !
+send-request
+8 idx !
+send-request
+
+amount @ int_message @ int_msg_body @ recv_internal code updated_storage @ c7 runvmctx
+test_code
+updated_storage !
+
+
+10000000 amount !
+4 unit_id !
+4 unit_level !
+8 units_counter !
+<b 0xaaeeee 32 u, 0 64 u, unit_id @ 16 u, unit_level @ 8 u, units_counter @ 16 u,  b> 
+<s int_msg_body !  
+
+1 idx !
+send-request
+2 idx !
+send-request
+3 idx !
+send-request
+4 idx !
+send-request
+5 idx !
+send-request
+6 idx !
+send-request
+7 idx !
+send-request
+8 idx !
+send-request
+
+amount @ int_message @ int_msg_body @ recv_internal code updated_storage @ c7 runvmctx
+test_code
+updated_storage !
+
+// test # 0 try matching for first user
+dictnew units !
+0 8 create-units-per-level
+0 add-units-per-level
+
+1 8 create-units-per-level
+1 add-units-per-level
+
+2 8 create-units-per-level
+2 add-units-per-level
+
+3 8 create-units-per-level
+3 add-units-per-level
+
+4 8 create-units-per-level
+4 add-units-per-level
+
+<b 0xbbeeee 32 u, 0 64 u, 1570476873 32 u,  units @ dict, b> 
+<s int_msg_body !  
+
+1 idx !
+send-request
+
+getqueuelen code updated_storage @ c7 runvmctx
+test_code
+drop
+1 = test_ret_value
+// test # 1 try matching 7 users more to start game
+
+2 idx !
+send-request
+3 idx !
+send-request
+4 idx !
+send-request
+5 idx !
+send-request
+6 idx !
+send-request
+7 idx !
+send-request
+8 idx !
+send-request

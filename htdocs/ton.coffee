@@ -3,10 +3,11 @@ window.ws_ton = new Websocket_wrap "#{ws_protocol}//#{location.hostname}:1338"
 json_cmp = (a,b)->JSON.stringify(a) == JSON.stringify(b)
 
 class TON_account
-  balance : -1
-  address : "???"
+  balance         : -1
+  address         : "???"
   owned_hash      : {}
   unit_price_hash : {} # id -> id level price
+  queue_len       : 1
   
   event_mixin @
   constructor:()->
@@ -14,6 +15,10 @@ class TON_account
     @unit_price_hash = {}
     @unit_price_request()
     @unit_count_request()
+    
+    setInterval ()=>
+      @get_queue_len_request()
+    , 10000
   
   unit_price_request : ()->
     req_unit_list = []
@@ -43,6 +48,11 @@ class TON_account
       unit_list : req_unit_list
     }
     return
+  
+  get_queue_len_request : ()->
+    ws_ton.write {
+      switch    : "get_queue_len"
+    }
 
 window.ton = new TON_account
 window.ws_ton.on "data", (data)->
@@ -86,5 +96,10 @@ window.ws_ton.on "data", (data)->
       
       if need_update
         ton.dispatch "count_update"
+    
+    when "get_queue_len"
+      if ton.queue_len != data.result
+        ton.queue_len = data.result
+        ton.dispatch "queue_len_update"
     
   return

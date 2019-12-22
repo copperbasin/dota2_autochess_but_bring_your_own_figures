@@ -144,6 +144,13 @@ buy_unit = (type_id, level, count)->
     return false
   return
 
+get_queue_len = (type_id, level, count)->
+  try
+    return res_parse easy_exec("lite-client -c 'runmethod #{contract_addr} getqueuelen' 2>&1 | grep result")
+  catch err
+    perr err
+  null
+
 # ###################################################################################################
 #    matchmaking
 # ###################################################################################################
@@ -176,6 +183,9 @@ ton_wss.on 'connection', (con)->
       perr err
       return
     switch data.switch
+      # ###################################################################################################
+      #    shop/figures/player figures etc
+      # ###################################################################################################
       when "get_price"
         if !data.unit_list
           perr "!data.unit_list"
@@ -268,6 +278,16 @@ ton_wss.on 'connection', (con)->
           uid : data.uid
           result
         }
+      # ###################################################################################################
+      #    matchmaking
+      # ###################################################################################################
+      when "get_queue_len"
+        result = get_queue_len()
+        con.write {
+          switch : "get_queue_len"
+          result
+        }
+      
   return
 
 ton_wss.write = (msg)->
