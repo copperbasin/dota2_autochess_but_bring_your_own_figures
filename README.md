@@ -69,7 +69,7 @@ Docker is highly recommended
 
 ### How to deploy smart-contracts? ###
 
-    # TBD
+See. sh_scripts
 
 ### How to tell browser client connect to specific smart-contract? ###
 
