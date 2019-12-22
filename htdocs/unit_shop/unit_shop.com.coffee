@@ -108,12 +108,19 @@ module.exports =
     table {
       class: "h_layout_table reset_font center_pad"
       style:
-        width : 220+600
+        width : 220+650
     }
       tbody
         tr
           td {colSpan: 2}
-            level_count_hash = {
+            level_count_owned_hash = {
+              1:0
+              2:0
+              3:0
+              4:0
+              5:0
+            }
+            level_count_equipped_hash = {
               1:0
               2:0
               3:0
@@ -122,23 +129,52 @@ module.exports =
             }
             for unit in unit_list
               if count = ton.owned_hash[unit.id]?.count
-                level_count_hash[unit.level] += count
+                level_count_owned_hash[unit.level] += count
+                if equip_count = ton.unit_battle_hash[unit.id]
+                  equip_count = Math.min equip_count, count
+                  level_count_equipped_hash[unit.level] += equip_count
+            
+            puts level_count_equipped_hash
+            
             table {class: "table center_pad"}
               tr
-                th {rowSpan:3}, "Your figures by level"
+                th {rowSpan:4}, "Your figures by level"
                 th "Level"
                 for level in [1 .. 5]
                   td level
               tr
                 th "Count"
                 for level in [1 .. 5]
-                  td level_count_hash[level]
+                  td level_count_owned_hash[level]
               tr
-                th "Pass"
+                th "Owned"
                 for level in [1 .. 5]
                   td
                     # TODO component
-                    if level_count_hash[level] >= min_figure_match_count
+                    if level_count_owned_hash[level] >= min_figure_match_count
+                      img {
+                        class : "s_icon"
+                        src : "img/yes.png"
+                      }
+                    else
+                      img {
+                        class : "s_icon"
+                        src : "img/no.png"
+                      }
+              tr
+                th
+                  span "Bring to battle "
+                  Button {
+                    label : "All"
+                    on_click : ()=>
+                      for id,unit of ton.owned_hash
+                        ton.unit_battle_hash[id] = unit.count
+                      @force_update()
+                  }
+                for level in [1 .. 5]
+                  td
+                    # TODO component
+                    if level_count_equipped_hash[level] >= min_figure_match_count
                       img {
                         class : "s_icon"
                         src : "img/yes.png"
@@ -273,14 +309,14 @@ module.exports =
                         span "failed"
           td {
             style:
-              width: 600
+              width: 650
           }
             div {
               class: "scroll_container"
               style:
                 height: 904
             }
-              colSpan = 8
+              colSpan = 9
               table {class:"table shop_table"}
                 tbody
                   tr
@@ -295,6 +331,7 @@ module.exports =
                     th "Lvl"
                     th "Class"
                     th "Spec"
+                    th "Bring to battle"
                     th "Owned"
                     th "Price (nano)"
                     th "To buy"
@@ -335,6 +372,14 @@ module.exports =
                         unit.class
                       td {class: if check_spec then "check_pass" else default_class}
                         unit.spec
+                      td {class: default_class}
+                        do (unit)=>
+                          Number_input {
+                            value : ton.unit_battle_hash[unit.id] or 0
+                            on_change : (value)=>
+                              ton.unit_battle_hash[unit.id] = value
+                              @force_update()
+                          }
                       td {class: default_class}
                         if ton.owned_hash[unit.id]?
                           ton.owned_hash[unit.id].count

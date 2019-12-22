@@ -7,18 +7,72 @@ class TON_account
   address         : "???"
   owned_hash      : {}
   unit_price_hash : {} # id -> id level price
+  unit_battle_hash: {} # id -> count
   queue_len       : 1
   
   event_mixin @
   constructor:()->
     event_mixin_constructor @
     @unit_price_hash = {}
+    @unit_battle_hash= {}
     @unit_price_request()
     @unit_count_request()
     
     setInterval ()=>
       @get_queue_len_request()
     , 10000
+  
+  line_up_gen : ()->
+    left_hash = {
+      1 : min_figure_match_count
+      2 : min_figure_match_count
+      3 : min_figure_match_count
+      4 : min_figure_match_count
+      5 : min_figure_match_count
+    }
+    level_unit_hash = {
+      1 : []
+      2 : []
+      3 : []
+      4 : []
+      5 : []
+    }
+    
+    for id,count of @unit_battle_hash
+      level = @unit_price_hash[id].level
+      continue if left_hash[level] <= 0
+      max_count = @owned_hash[id]?.count or 0
+      count = Math.min count, max_count
+      count = Math.min count, left_hash[level]
+      left_hash[level] -= count
+      continue if !count
+      level_unit_hash[level].push {
+        id
+        level
+        count
+      }
+    
+    res = []
+    for k,v of level_unit_hash
+      res.append v
+    res
+  
+  line_up_check : ()->
+    level_hash = {
+      1 : 0
+      2 : 0
+      3 : 0
+      4 : 0
+      5 : 0
+    }
+    
+    for id,count of @unit_battle_hash
+      level = @unit_price_hash[id].level
+      level_hash[level] += count
+    
+    for level,count of level_hash
+      return false if count < min_figure_match_count
+    true
   
   unit_price_request : ()->
     req_unit_list = []
@@ -67,16 +121,6 @@ window.ws_ton.on "data", (data)->
       if ton.address != data.address
         ton.address = data.address
         ton.dispatch "address", data.address
-    
-    when "get_price"
-      need_update = false
-      for unit in data.unit_list
-        if !json_cmp(ton.unit_price_hash[unit.id], unit)
-          ton.unit_price_hash[unit.id] = unit
-          need_update = true
-      
-      if need_update
-        ton.dispatch "price_update"
     
     when "get_price"
       need_update = false
