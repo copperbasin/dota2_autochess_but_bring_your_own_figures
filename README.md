@@ -1,4 +1,5 @@
 # It's dota2 autochess but bring your own figures
+**ALSO** see our other submission https://github.com/KStasi/Ton-Hack
 **NOTE** The contracts are developing in the separate repository. More info can be found here: https://github.com/KStasi/Ton-Dich5
 ## What is it? ##
 
