@@ -72,4 +72,4 @@ Docker is highly recommended
 
 ### How to tell browser client connect to specific smart-contract? ###
 
-    # TBD
+Smart contract id is hardcoded in server.coffee. You can change it.
