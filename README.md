@@ -74,3 +74,7 @@ See. sh_scripts
 ### How to tell browser client connect to specific smart-contract? ###
 
 Smart contract id is hardcoded in server.coffee. You can change it.
+
+## Gears inside ##
+
+  * https://github.com/vird/ff_rts (also ff_rts can run on smart contracts with cheap gas and/or wasm-capable engines)
