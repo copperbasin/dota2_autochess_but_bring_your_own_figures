@@ -1,4 +1,6 @@
 # It's dota2 autochess but bring your own figures
+**ALSO** see our other submission https://github.com/KStasi/Ton-Hack \
+**NOTE** The contracts are developing in the separate repository. More data (fift scripts and tests) can be found here: https://github.com/KStasi/Ton-Dich5
 ## What is it? ##
 
 This is our freaky custom variation of dota2 autochess. We tried to make it works somehow on TON smart-contracts.
@@ -67,8 +69,12 @@ Docker is highly recommended
 
 ### How to deploy smart-contracts? ###
 
-    # TBD
+See. sh_scripts
 
 ### How to tell browser client connect to specific smart-contract? ###
 
-    # TBD
+Smart contract id is hardcoded in server.coffee. You can change it.
+
+## Gears inside ##
+
+  * https://github.com/vird/ff_rts (also ff_rts can run on smart contracts with cheap gas and/or wasm-capable engines)
