@@ -25,3 +25,8 @@
   height: 20px;
   margin-bottom: -5px;
 }
+
+.shop_filter_title {
+  text-align: left;
+  width:50px;
+}

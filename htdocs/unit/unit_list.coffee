@@ -87,24 +87,23 @@ str = """
 50004;                   ;enigma             ;5;warlock       ;elemental
 50005;                   ;techies            ;5;mech          ;goblin
 """
-window.unit_list = str.split("\n").map (str)->
-  [id, display_name, type, level, _class, spec] = str.split(';').map((t)->t.trim())
-  display_name = display_name or type.replace(/_/g, ' ')
-  if id
-    id = +id
-  else
-    id = undefined
+# window.unit_list = str.split("\n").map (str)->
+#   [id, display_name, type, level, _class, spec] = str.split(';').map((t)->t.trim())
+#   display_name = display_name or type.replace(/_/g, ' ')
+#   if id
+#     id = +id
+#   else
+#     id = undefined
   
-  level = +level
-  {
-    id
-    display_name
-    type
-    level
-    class: _class
-    spec
-  }
-
+#   level = +level
+#   {
+#     id
+#     display_name
+#     type
+#     level
+#     class: _class
+#     spec
+#   }
 
 window.dev_script_gen = (opt = {})->
   opt.price ?= 400

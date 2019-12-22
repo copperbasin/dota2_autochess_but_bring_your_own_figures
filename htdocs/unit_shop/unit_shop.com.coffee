@@ -53,7 +53,7 @@ module.exports =
     table {
       class: "h_layout_table reset_font center_pad"
       style:
-        width : 220+600
+        width : 420+600
     }
       tbody
         tr
@@ -96,15 +96,16 @@ module.exports =
         tr
           td {
             style:
-              width: 220
+              width: 320
           }
             table
               tbody
                 tr
-                  td "Level"
+                  td {class:"shop_filter_title"}, "Level"
                   td {
+                    class:"shop_filter_value"
                     style:
-                      width: 100
+                      width: 300
                   }
                     Tab_bar {
                       hash : {
@@ -148,10 +149,10 @@ module.exports =
                           filter_class_list.push _class.name
                         @set_state {filter_class_list}
                     }
-                      td _class.display_name
-                      td
+                      td {class:"shop_filter_title", colSpan:2}
                         # TODO better checkbox
                         Checkbox {
+                          label : _class.display_name
                           value : @state.filter_class_list.has _class.name
                           on_change : (include)=>
                             {filter_class_list} = @state
@@ -174,10 +175,10 @@ module.exports =
                           filter_spec_list.push spec.name
                         @set_state {filter_spec_list}
                     }
-                      td spec.display_name
-                      td
+                      td {class:"shop_filter_title", colSpan: 2}
                         # TODO better checkbox
                         Checkbox {
+                          label : spec.display_name
                           value : @state.filter_spec_list.has spec.name
                           on_change : (include)=>
                             {filter_spec_list} = @state
@@ -212,7 +213,7 @@ module.exports =
             div {
               class: "scroll_container"
               style:
-                height: 904
+                height: 753
             }
               colSpan = 8
               table {class:"table shop_table"}
