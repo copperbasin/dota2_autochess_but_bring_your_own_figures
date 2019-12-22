@@ -1,0 +1,196 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+variable updated_storage
+variable amount
+variable ext_msg_body
+variable prices 
+variable unit_price_lists 
+{ <b swap 32 u, b> <s } : create-price
+{ prices @ 8 udict!+ not abort"cannot add price to dictionary" prices ! } : add-price
+{ <b swap dict, b> <s } : create-unit-prices
+{ unit_price_lists @ 16 udict!+ not abort"cannot add unit lists to dictionary" unit_price_lists ! } : add-units-list
+
+
+{ { ."success " cr } { "test failed" abort } cond } : test_ret_value
+{ swap 0= test_ret_value } : test_code
+{ { ."success " cr } { " contract state error: " abort } cond } : test_state
+100000 constant timeout
+true constant bounce
+"build/new-game" constant file-base
+file-base +".addr" load-address 2constant dest_addr
+"build/game-code.fif" include <s constant code
+
+<b 
+    dictnew dict,
+    dictnew dict,
+    dictnew dict,
+    dictnew dict,
+    0 32 u,
+    file-base +".pk" load-generate-keypair constant game_pk B, 
+b> constant initial_storage
+
+// [ magic:0x076ef1ea actions:Integer msgs_sent:Integer
+// unixtime:Integer block_lt:Integer trans_lt:Integer
+// rand_seed:Integer balance_remaining:[Integer (Maybe Cell)]
+// myself:MsgAddressInt global_config:(Maybe Cell)
+// ] = SmartContractInfo;
+
+0 tuple 0x076ef1ea ,
+0 , 0 , 
+1570470873 ,
+1 , 1 , 0 , 
+0 tuple 9223372036854775807 , dictnew , , 
+dest_addr nip , dictnew , 
+1 tuple 
+constant c7
+
+// test # 0 external message to remove all units from store
+
+<b 0 32 u, now timeout + 32 u, 0xaa1122 32 u, dictnew dict, b>
+dup hashu game_pk ed25519_sign_uint
+<b swap B, swap <s s, b>
+<s ext_msg_body !  
+
+ext_msg_body @ recv_external code initial_storage c7 runvmctx
+test_code
+dup updated_storage !
+boc>B <b 
+    dictnew dict,
+    dictnew dict,
+    dictnew dict,
+    dictnew dict,
+    1 32 u,
+    file-base +".pk" load-generate-keypair constant game_pk B, 
+b>  boc>B B= test_state
+
+// test # 1 external message to add one unit with one level to store
+dictnew unit_price_lists ! // dictionary with prices for all unit and levels
+dictnew prices ! // dictionary with prices for each level for one specific unit
+4 create-price 
+0 add-price 
+prices @ create-unit-prices
+0 add-units-list
+
+
+<b 0 32 u, now timeout + 32 u, 0xaa1122 32 u, unit_price_lists @ dict, b>
+dup hashu game_pk ed25519_sign_uint
+<b swap B, swap <s s, b>
+<s ext_msg_body !  
+
+ext_msg_body @ recv_external code initial_storage c7 runvmctx
+test_code
+dup updated_storage !
+boc>B <b 
+    dictnew dict,
+    dictnew dict,
+    unit_price_lists @ dict,
+    dictnew dict,
+    1 32 u,
+    file-base +".pk" load-generate-keypair constant game_pk B, 
+b>  boc>B B= test_state
+
+// test # 2 external message to add many units with single levels to store
+dictnew unit_price_lists ! // dictionary with prices for all unit and levels
+dictnew prices ! // dictionary with prices for each level for one specific unit
+4 create-price 
+0 add-price 
+prices @ create-unit-prices
+0 add-units-list
+
+dictnew prices ! 
+231 create-price 
+0 add-price 
+prices @ create-unit-prices
+1 add-units-list
+
+dictnew prices ! 
+400 create-price 
+0 add-price 
+prices @ create-unit-prices
+2 add-units-list
+
+dictnew prices ! 
+2332 create-price 
+0 add-price 
+prices @ create-unit-prices
+3 add-units-list
+
+<b 0 32 u, now timeout + 32 u, 0xaa1122 32 u, unit_price_lists @ dict, b>
+dup hashu game_pk ed25519_sign_uint
+<b swap B, swap <s s, b>
+<s ext_msg_body !  
+
+ext_msg_body @ recv_external code initial_storage c7 runvmctx
+test_code
+dup updated_storage !
+boc>B <b 
+    dictnew dict,
+    dictnew dict,
+    unit_price_lists @ dict,
+    dictnew dict,
+    1 32 u,
+    file-base +".pk" load-generate-keypair constant game_pk B, 
+b>  boc>B B= test_state
+
+
+// test # 3 external message to add many units with many levels to store
+dictnew unit_price_lists ! // dictionary with prices for all unit and levels
+dictnew prices ! // dictionary with prices for each level for one specific unit
+4 create-price 
+0 add-price 
+231 create-price 
+1 add-price 
+2332 create-price 
+2 add-price 
+prices @ create-unit-prices
+0 add-units-list
+
+dictnew prices ! 
+231 create-price 
+0 add-price 
+prices @ create-unit-prices
+1 add-units-list
+
+dictnew prices ! 
+400 create-price 
+0 add-price 
+531 create-price 
+1 add-price 
+2352 create-price 
+2 add-price 
+prices @ create-unit-prices
+2 add-units-list
+
+dictnew prices ! 
+2332 create-price 
+0 add-price 
+231 create-price 
+1 add-price 
+2332 create-price 
+2 add-price 
+22221 create-price 
+3 add-price 
+111232 create-price 
+4 add-price 
+prices @ create-unit-prices
+3 add-units-list
+
+<b 0 32 u, now timeout + 32 u, 0xaa1122 32 u, unit_price_lists @ dict, b>
+dup hashu game_pk ed25519_sign_uint
+<b swap B, swap <s s, b>
+<s ext_msg_body !  
+
+ext_msg_body @ recv_external code initial_storage c7 runvmctx
+test_code
+dup updated_storage !
+boc>B <b 
+    dictnew dict,
+    dictnew dict,
+    unit_price_lists @ dict,
+    dictnew dict,
+    1 32 u,
+    file-base +".pk" load-generate-keypair constant game_pk B, 
+b>  boc>B B= test_state
+

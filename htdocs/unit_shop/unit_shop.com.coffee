@@ -8,7 +8,10 @@ module.exports =
     balance : -1
     # key id
     # to buy
-    to_buy_unit_hash : {}
+    to_buy_unit_hash  : {}
+    
+    buy_in_progress   : false
+    buy_status        : ''
   }
   
   check_same : (t)->
@@ -29,9 +32,9 @@ module.exports =
     false
   
   
-  listener_balance : null
-  listener_price : null
-  listener_count : null
+  listener_balance: null
+  listener_price  : null
+  listener_count  : null
   mount: ()->
     # TODO throttle
     ton.on "balance", @listener_balance = (balance)=>
@@ -46,6 +49,58 @@ module.exports =
     ton.off "price_update", @listener_price
     ton.off "count_update", @listener_count
   
+  buy : ()->
+    @set_state {buy_in_progress: true}
+    old_owned_hash = clone ton.owned_hash
+    await call_later defer()
+    
+    id_list = []
+    for id,count of @state.to_buy_unit_hash
+      id_list.push +id
+      ws_ton.write {
+        switch  : "buy_unit"
+        id      : id
+        level   : ton.unit_price_hash[id].level
+        count
+      }
+    
+    await setTimeout defer(), 1000
+    successful = false
+    for retry in [0 ... 30]
+      # debugger
+      ton.unit_count_request id_list
+      await setTimeout defer(), 1000
+      
+      to_buy_unit_hash = clone @state.to_buy_unit_hash
+      change_count = 0
+      for k,old_val of old_owned_hash
+        new_val = ton.owned_hash[k]
+        continue if new_val.count == old_val.count
+        diff = new_val.count - old_val.count
+        if diff > 0
+          old_owned_hash[k] = new_val
+          change_count++
+        to_buy_unit_hash[k] -= diff
+      
+      puts "change_count=#{change_count}"
+      continue if change_count == 0
+      
+      @set_state {to_buy_unit_hash}
+      await call_later defer()
+      buy_left = 0
+      for k,v of @state.to_buy_unit_hash
+        buy_left += v
+      puts "buy_left=#{buy_left}"
+      if buy_left == 0
+        successful = true
+        break
+    
+    @set_state {
+      buy_in_progress : false
+      buy_status      : if successful then 'successful' else 'failed'
+    }
+    return
+  
   render : ()->
     filter_level        = if @state.filter_level == 'none' then null else +@state.filter_level.trim()
     filter_only_combo   = JSON.parse @state.filter_only_combo
@@ -53,12 +108,19 @@ module.exports =
     table {
       class: "h_layout_table reset_font center_pad"
       style:
-        width : 420+600
+        width : 420+650
     }
       tbody
         tr
           td {colSpan: 2}
-            level_count_hash = {
+            level_count_owned_hash = {
+              1:0
+              2:0
+              3:0
+              4:0
+              5:0
+            }
+            level_count_equipped_hash = {
               1:0
               2:0
               3:0
@@ -67,23 +129,52 @@ module.exports =
             }
             for unit in unit_list
               if count = ton.owned_hash[unit.id]?.count
-                level_count_hash[unit.level] += count
+                level_count_owned_hash[unit.level] += count
+                if equip_count = ton.unit_battle_hash[unit.id]
+                  equip_count = Math.min equip_count, count
+                  level_count_equipped_hash[unit.level] += equip_count
+            
+            puts level_count_equipped_hash
+            
             table {class: "table center_pad"}
               tr
-                th {rowSpan:3}, "Your figures by level"
+                th {rowSpan:4}, "Your figures by level"
                 th "Level"
                 for level in [1 .. 5]
                   td level
               tr
                 th "Count"
                 for level in [1 .. 5]
-                  td level_count_hash[level]
+                  td level_count_owned_hash[level]
               tr
-                th "Pass"
+                th "Owned"
                 for level in [1 .. 5]
                   td
                     # TODO component
-                    if level_count_hash[level] >= min_figure_match_count
+                    if level_count_owned_hash[level] >= min_figure_match_count
+                      img {
+                        class : "s_icon"
+                        src : "img/yes.png"
+                      }
+                    else
+                      img {
+                        class : "s_icon"
+                        src : "img/no.png"
+                      }
+              tr
+                th
+                  span "Bring to battle "
+                  Button {
+                    label : "All"
+                    on_click : ()=>
+                      for id,unit of ton.owned_hash
+                        ton.unit_battle_hash[id] = unit.count
+                      @force_update()
+                  }
+                for level in [1 .. 5]
+                  td
+                    # TODO component
+                    if level_count_equipped_hash[level] >= min_figure_match_count
                       img {
                         class : "s_icon"
                         src : "img/yes.png"
@@ -197,7 +288,12 @@ module.exports =
                         total_cost += v*price
                         total_count += v
                     div "Total cost: #{(total_cost*1e-9).toFixed(9)}"
-                    if total_count == 0
+                    if @state.buy_in_progress
+                      Start_button {
+                        disabled: true
+                        label: "Buy in progress"
+                      }
+                    else if total_count == 0
                       Start_button {
                         disabled: true
                         label: "Buy"
@@ -205,17 +301,23 @@ module.exports =
                     else
                       Start_button {
                         label: "Buy #{total_count}"
+                        on_click : ()=>@buy()
                       }
+                    switch @state.buy_status
+                      when "successful"
+                        span "successful"
+                      when "failed"
+                        span "failed"
           td {
             style:
-              width: 600
+              width: 650
           }
             div {
               class: "scroll_container"
               style:
                 height: 753
             }
-              colSpan = 8
+              colSpan = 9
               table {class:"table shop_table"}
                 tbody
                   tr
@@ -230,6 +332,7 @@ module.exports =
                     th "Lvl"
                     th "Class"
                     th "Spec"
+                    th "Bring to battle"
                     th "Owned"
                     th "Price (nano)"
                     th "To buy"
@@ -271,6 +374,14 @@ module.exports =
                       td {class: if check_spec then "check_pass" else default_class}
                         unit.spec
                       td {class: default_class}
+                        do (unit)=>
+                          Number_input {
+                            value : ton.unit_battle_hash[unit.id] or 0
+                            on_change : (value)=>
+                              ton.unit_battle_hash[unit.id] = value
+                              @force_update()
+                          }
+                      td {class: default_class}
                         if ton.owned_hash[unit.id]?
                           ton.owned_hash[unit.id].count
                         else
@@ -290,5 +401,4 @@ module.exports =
                   if left == limit
                     tr
                       td {colSpan}, "No units"
-
   

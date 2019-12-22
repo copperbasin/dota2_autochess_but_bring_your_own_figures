@@ -3,9 +3,7 @@
 (cell, (int, cell, int)) ~udict::delete_get_min_ref(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMINREF" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
 (cell, int, cell, int) udict_delete_get_min_ref(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMINREF" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
 
-forall A, B, C, D, X, Y, Z, W -> tuple tuple8(A a, B b, C c, D d, X x, Y y, Z z, W w) asm "8 TUPLE";
-int tuple_len(tuple t) asm "TLEN";	
-;; forall X -> X tuple_get_el(tuple t, int k) asm(-> 1 0) "INDEX";
+(slice, int, int) udict_get_min?(cell dict, int key_len) asm "DICTUMIN" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
 
 (cell, cell, cell, cell, int, int) load_data() method_id {
     ;; dict users, dict matches, dict prices, dict ban_requests, int seqno, int pubkey
@@ -150,8 +148,9 @@ cell store_player(cell players, int idx, int player_hash, cell unit_pool, int go
     return players;
 }
 
-cell create_game(cell games, int idx, int should_start_round, cell unit_pool_by_level, cell players, cell current_round, cell last_round_results, int timeout) impure {
+cell create_game(cell games, int idx, int valid_unitl, int should_start_round, cell unit_pool_by_level, cell players, cell current_round, cell last_round_results, int timeout) impure {
     cell game = begin_cell()
+        .store_uint(valid_unitl, 32)
         .store_int(should_start_round, 1)
         .store_uint(timeout, 32) ;; TODO: should update
         .store_dict(unit_pool_by_level)
@@ -163,14 +162,15 @@ cell create_game(cell games, int idx, int should_start_round, cell unit_pool_by_
     return games;
 }
 
-(int, int, cell, cell, cell,cell) get_game(cell games, int idx) impure {
+(int, int, int, cell, cell, cell,cell) get_game(cell games, int idx) impure {
     ;; int should_start_round, int timeout, cell unit_pool_by_level, cell players, cell current_round, cell last_round_results
     cell game = udict_get_ref(games, 8, idx);
     if (game.null?()) {
-        return (0, 0, game, game, game, game);
+        return (0, 0, 0, game, game, game, game);
     }
     slice s_game = game.begin_parse();
     return (
+        s_game~load_uint(32),
         s_game~load_uint(1),
         s_game~load_uint(32),
         s_game~load_dict(),
@@ -206,7 +206,7 @@ cell start_game(cell matches) impure {
     } else {
         idx = 0;
     }
-    games = create_game(games, idx, true, unit_pool_by_level, players, new_dict(), new_dict(), 720000);
+    games = create_game(games, idx, now() + 40000, true, unit_pool_by_level, players, new_dict(), new_dict(), 720000);
     matches~udict_set_ref(2, 1, games);
     return matches;
 }
@@ -234,7 +234,7 @@ cell start_game(cell matches) impure {
     }
     ;; TODO: add level number check
     var (matches, queue_length) = push_queue(matches, owner_address, valid_until, unit_pool);
-    if (queue_length == 2) {
+    if (queue_length == 7) {
         matches = start_game(matches);
     }
     users = create_user(owner_address, users, paid_until, true, bans_counter, units);
@@ -292,6 +292,55 @@ cell start_game(cell matches) impure {
   return ();
 }
 
+cell remove_expired(cell dict, int key_len) impure {
+    var (value, key, f) = udict_get_min?(dict, key_len);
+    while (f) {
+        int valid_unitl = value.preload_uint(32);
+        if (valid_unitl < now()) {
+            (dict, f) = udict_delete?(dict, key_len, key);
+        }
+        (key, value, f) = udict_get_next?(dict, key_len, key);
+    }
+    return dict;
+}
+
+cell remove_matches(cell matches) impure {
+    ;; int should_start_round, int timeout, cell unit_pool_by_level, cell players, cell current_round, cell last_round_results
+    var (matches, idx, queue, f) = udict_delete_get_min_ref(matches, 2);
+    var (matches, idx, games, f) = udict_delete_get_min_ref(matches, 2);
+    ifnot (queue.null?()) {
+        ;;queue = remove_expired(queue, 4);
+        ;;matches~udict_set_ref(2, 0, queue);
+        ifnot (queue.null?()) {
+            matches~udict_set_ref(2, 0, queue);
+        }
+    }
+    ifnot (games.null?()) {
+        games = remove_expired(games, 4);
+        matches~udict_set_ref(2, 1, games);
+        ifnot (games.null?()) {
+            matches~udict_set_ref(2, 1, games);
+        }
+    }
+    return matches;
+}
+
+
+() run_ticktock() impure {
+    var (users, matches, prices, ban_requests, stored_seqno, public_key) = load_data();
+    ifnot (ban_requests.null?()) {
+        ban_requests = remove_expired(ban_requests, 16);
+    }
+    ifnot (matches.null?()) {
+        ;; unlock_users(users, matches);
+        matches = remove_matches(matches);
+    }
+    ifnot (users.null?()) {
+        users = remove_expired(users, 256);
+    }
+    return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
+}
+
 ;; getters
 (cell, cell, cell, cell, int, int) getstorage() method_id {
     ;; dict users, dict matches, dict prices, dict ban_requests, int seqno, int pubkey
@@ -320,7 +369,7 @@ int getprice(int unit_id, int unit_level) method_id {
     return get_unit(units, unit_id, unit_level);
 }
 
-(int, int, cell, cell, cell,cell) getgame(int idx) method_id {
+(int, int, int, cell, cell, cell,cell) getgame(int idx) method_id {
     var ds = get_data().begin_parse();
     (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
     cell games = udict_get_ref(matches, 2, 1);
@@ -338,3 +387,4 @@ int getqueuelen() method_id {
         return 0;
     }
 }
+

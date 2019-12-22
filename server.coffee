@@ -1,6 +1,7 @@
 #!/usr/bin/env iced
 ### !pragma coverage-skip-block ###
 require 'fy'
+fs = require 'fs'
 require 'lock_mixin'
 {exec, execSync} = require 'child_process'
 argv = require('minimist')(process.argv.slice(2))
@@ -31,6 +32,8 @@ delivery.start {
   ws_port : argv.ws_port
   watch_root  : true
   allow_hard_stop : true
+  watcher_ignore : (event, full_path)->
+    /\b(build|wallet)\b/.test full_path
   engine : {
     HACK_remove_module_exports : true
   }
@@ -131,6 +134,9 @@ buy_unit = (type_id, level, count)->
   figure_cost = get_price(type_id, level)
   return false if !figure_cost?
   cost  = figure_cost*count
+  # Но у нас не считается нормально газ... потому
+  cost = Math.min cost, 0.5
+  
   seqno = get_seqno()
   try
     easy_exec([
@@ -148,7 +154,27 @@ buy_unit = (type_id, level, count)->
 #    matchmaking
 # ###################################################################################################
 
+get_queue_len = (type_id, level, count)->
+  try
+    return res_parse easy_exec("lite-client -c 'runmethod #{contract_addr} getqueuelen' 2>&1 | grep result")
+  catch err
+    perr err
+  null
 
+line_up = ()->
+  seqno = get_seqno()
+  try
+    # TODO 0.5 G HARDCODE
+    easy_exec([
+      "fift -s fift_scripts/line-up-queue.fif"
+      "fift -s fift_scripts/wallet.fif 'build/new-wallet' #{contract_addr} #{seqno} 0.5 './build/wallet-query' -B './build/line-up.boc'"
+      "lite-client -c 'sendfile ./build/wallet-query.boc'"
+    ].join " && ")
+    return true
+  catch err
+    perr err
+  false
+  
 # ###################################################################################################
 #    TON ws
 # ###################################################################################################
@@ -176,6 +202,9 @@ ton_wss.on 'connection', (con)->
       perr err
       return
     switch data.switch
+      # ###################################################################################################
+      #    shop/figures/player figures etc
+      # ###################################################################################################
       when "get_price"
         if !data.unit_list
           perr "!data.unit_list"
@@ -237,10 +266,7 @@ ton_wss.on 'connection', (con)->
           }
         
       when "get_unit_count_multi_exec"
-        if !data.unit_list
-          perr "!data.unit_list"
-          return
-        
+        return perr "!data.unit_list" if !data.unit_list
         ctx_list = []
         for unit in data.unit_list
           # TOO slow for bulk
@@ -263,17 +289,60 @@ ton_wss.on 'connection', (con)->
         }
       
       when "buy_unit"
+        return perr "!data.id"    if !data.id
+        return perr "!data.level" if !data.level
+        return perr "!data.count" if !data.count
         result = buy_unit data.id, data.level, data.count
         con.write {
           uid : data.uid
           result
         }
+      # ###################################################################################################
+      #    matchmaking
+      # ###################################################################################################
+      when "get_queue_len"
+        result = get_queue_len()
+        con.write {
+          switch : "get_queue_len"
+          result
+        }
+      
+      when "line_up"
+        # **** же костыль
+        list = []
+        list.push """
+        // add your units for match in form:
+        //
+        // UNIT_ID CONTER create-units-per-level
+        // LEVEL add-units-per-level
+        """
+        for unit in data.unit_list
+          return perr "!unit.id"    if unit.id
+          return perr "!unit.count" if unit.count
+          return perr "!unit.level" if unit.level
+          
+          list.push """
+          #{unit.id} #{unit.count} create-units-per-level
+          #{unit.level} add-units-per-level
+          """
+        fs.writeFileSync "fift_scripts/units-source.fif", list.join "\n\n"
+        result = line_up()
+        con.write {
+          switch : "line_up"
+          result
+        }
+      
   return
 
 ton_wss.write = (msg)->
   ton_wss.clients.forEach (con)-> # FUCK ws@2.2.0
     con.write msg
   return
+
+do ()->
+  loop
+    easy_exec "lite-client -c 'last' 2>&1"
+    await setTimeout defer(), 1000
 
 do ()->
   loop

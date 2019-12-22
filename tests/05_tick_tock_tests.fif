@@ -1,0 +1,43 @@
+#!/usr/bin/env fift -s
+"./03_line_up_to_match_tests.fif" include
+108902 constant getstorage
+128933 constant getuser
+71227 constant getprice
+100842 constant getunits
+116502 constant getgame
+variable tmp_storage
+// test # 0 expire all
+0 tuple 0x076ef1ea ,
+0 , 0 , 
+1678470873 ,
+1 , 1 , 0 , 
+0 tuple 9223372036854775807 , dictnew , , 
+dest_addr nip , dictnew , 
+1 tuple 
+constant c7
+
+run_ticktock code updated_storage @ c7 runvmctx
+test_code
+tmp_storage !
+
+// test # 0.1 all users deleted
+{ = test_ret_value } : test
+
+-1 <b 1 32 u, b> hashu getuser code tmp_storage @ c7 runvmctx
+test_code
+2drop
+0 test 0 test 0 test
+
+-1 <b 7 32 u, b> hashu getuser code tmp_storage @ c7 runvmctx
+test_code
+2drop
+0 test 0 test 0 test
+
+// test # 0.1 game is free
+0 getgame code updated_storage @ c7 runvmctx
+test_code
+drop
+<b swap dict, b> boc>B <b dictnew dict, b> boc>B B= test_ret_value
+<b swap dict, b> boc>B <b dictnew dict, b> boc>B B= test_ret_value
+<b swap dict, b> boc>B <b dictnew dict, b> boc>B B= test_ret_value
+

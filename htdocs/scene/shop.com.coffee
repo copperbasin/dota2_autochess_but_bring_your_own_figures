@@ -33,7 +33,10 @@ module.exports =
               router_set "main"
           }
         balance = @state.balance
-        balance = '?' if balance == -1
+        if balance == -1
+          balance = '?'
+        else
+          balance = balance.toFixed(9)
         div "Address: #{@state.address}"
         div "Balance: #{balance} gramm"
         Unit_shop {
