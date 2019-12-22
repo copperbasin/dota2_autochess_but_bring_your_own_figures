@@ -7,7 +7,7 @@ module.exports =
         on_change : @on_change
         style     : @props.style or {}
       }
-      @props.children
+      @props.children or @props.label
     
   on_change : (event)->
     value = !!event.target.checked

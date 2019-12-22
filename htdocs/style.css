@@ -39,14 +39,14 @@ body, html {
 }
 
 .pad_top {
-  padding-top: 50px;
+  padding-top: 10px;
 }
 
 .background_pad {
   margin-left : auto;
   margin-right: auto;
   padding: 20px;
-  width : 1000px;
+  width : 1100px;
   border-radius: 2px;
   background: #eee;
   font-family: HypatiaSansPro-Regular;
