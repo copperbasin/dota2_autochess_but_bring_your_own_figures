@@ -169,6 +169,7 @@ module.exports =
                     on_click : ()=>
                       for id,unit of ton.owned_hash
                         ton.unit_battle_hash[id] = unit.count
+                      ton.save()
                       @force_update()
                   }
                 for level in [1 .. 5]
@@ -378,6 +379,7 @@ module.exports =
                             value : ton.unit_battle_hash[unit.id] or 0
                             on_change : (value)=>
                               ton.unit_battle_hash[unit.id] = value
+                              ton.save()
                               @force_update()
                           }
                       td {class: default_class}

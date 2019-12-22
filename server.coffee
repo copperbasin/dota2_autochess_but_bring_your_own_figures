@@ -308,24 +308,26 @@ ton_wss.on 'connection', (con)->
         }
       
       when "line_up"
-        # **** же костыль
-        list = []
-        list.push """
-        // add your units for match in form:
-        //
-        // UNIT_ID CONTER create-units-per-level
-        // LEVEL add-units-per-level
-        """
-        for unit in data.unit_list
-          return perr "!unit.id"    if unit.id
-          return perr "!unit.count" if unit.count
-          return perr "!unit.level" if unit.level
-          
-          list.push """
-          #{unit.id} #{unit.count} create-units-per-level
-          #{unit.level} add-units-per-level
-          """
-        fs.writeFileSync "fift_scripts/units-source.fif", list.join "\n\n"
+        # Там у Насти баг, потому посылаем от фонаря
+        # return perr "!unit.unit_list" if !data.unit_list
+        # # **** же костыль
+        # list = []
+        # list.push """
+        # // add your units for match in form:
+        # //
+        # // UNIT_ID CONTER create-units-per-level
+        # // LEVEL add-units-per-level
+        # """
+        # for unit in data.unit_list
+        #   return perr "!unit.id"    if !unit.id
+        #   return perr "!unit.count" if !unit.count
+        #   return perr "!unit.level" if !unit.level
+        #   
+        #   list.push """
+        #   #{unit.id} #{unit.count} create-units-per-level
+        #   #{unit.level} add-units-per-level
+        #   """
+        # fs.writeFileSync "fift_scripts/units-source.fif", list.join "\n\n"
         result = line_up()
         con.write {
           switch : "line_up"

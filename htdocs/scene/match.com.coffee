@@ -3,6 +3,7 @@ module.exports =
   state :
     waiting : true
     right_panel : "shop"
+  
   mount : ()->
     bg_change "img/battle_bg.jpg"
     # EMULATION

@@ -10,6 +10,11 @@ module.exports =
     ton.on "queue_len_update", @listener_queue = ()=>
       @force_update()
     
+    ws_ton.write {
+      switch : "line_up"
+      unit_list: ton.line_up_gen()
+    }
+    
     # @timeout_details = setTimeout ()=>
     #   @set_state {show_queue:true}
     # , 2000

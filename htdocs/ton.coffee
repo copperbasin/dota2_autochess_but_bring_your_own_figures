@@ -21,6 +21,17 @@ class TON_account
     setInterval ()=>
       @get_queue_len_request()
     , 10000
+    @load()
+  
+  load : ()->
+    try
+      @unit_battle_hash = JSON.parse localStorage.unit_battle_hash
+    catch err
+      p "no storage for unit_battle_hash"
+    
+  
+  save : ()->
+    localStorage.unit_battle_hash = JSON.stringify @unit_battle_hash
   
   line_up_gen : ()->
     left_hash = {
@@ -47,7 +58,7 @@ class TON_account
       left_hash[level] -= count
       continue if !count
       level_unit_hash[level].push {
-        id
+        id : +id
         level
         count
       }
@@ -67,7 +78,8 @@ class TON_account
     }
     
     for id,count of @unit_battle_hash
-      level = @unit_price_hash[id].level
+      level = @unit_price_hash[id]?.level or 0
+      continue if level == 0
       level_hash[level] += count
     
     for level,count of level_hash
