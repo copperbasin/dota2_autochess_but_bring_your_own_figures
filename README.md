@@ -1,4 +1,5 @@
 # It's dota2 autochess but bring your own figures
+**NOTE** The contracts are developing in the separate repository. More info can be found here: https://github.com/KStasi/Ton-Dich5
 ## What is it? ##
 
 This is our freaky custom variation of dota2 autochess. We tried to make it works somehow on TON smart-contracts.
