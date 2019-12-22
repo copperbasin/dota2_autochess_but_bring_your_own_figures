@@ -31,6 +31,9 @@ Docker is highly recommended
     # wait some time
     # run broadcast
     ./sh_scripts/02_broadcast_wallet.sh
+    # go to shop in UI
+
+![Balance example](/screenshot/screenshot_shop_balance.png "Balance example")
 
 ## Development (You are dev and feeling lucky) ##
 ### How to launch front-end? ###
