@@ -57,6 +57,7 @@ COPY wrapper.sh .
 COPY ton_loop.sh .
 COPY server_loop.sh .
 COPY ton-global.config .
+COPY config.json .
 COPY _ss.sh .
 
 RUN source ~/.nvm/nvm.sh && npm ci

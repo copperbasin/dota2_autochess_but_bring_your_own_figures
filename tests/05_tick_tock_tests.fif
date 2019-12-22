@@ -33,8 +33,8 @@ test_code
 2drop
 0 test 0 test 0 test
 
-// test # 0.1 game is free
-0 getgame code updated_storage @ c7 runvmctx
+// test # 0.2 game is free
+0 getgame code tmp_storage @ c7 runvmctx
 test_code
 drop
 <b swap dict, b> boc>B <b dictnew dict, b> boc>B B= test_ret_value

@@ -304,25 +304,50 @@ cell remove_expired(cell dict, int key_len) impure {
     return dict;
 }
 
-cell remove_matches(cell matches) impure {
-    ;; int should_start_round, int timeout, cell unit_pool_by_level, cell players, cell current_round, cell last_round_results
-    var (matches, idx, queue, f) = udict_delete_get_min_ref(matches, 2);
-    var (matches, idx, games, f) = udict_delete_get_min_ref(matches, 2);
-    ifnot (queue.null?()) {
-        ;;queue = remove_expired(queue, 4);
-        ;;matches~udict_set_ref(2, 0, queue);
+(cell, cell) remove_from_queue(cell queue, cell users) impure {
+    var new_queue = new_dict();
+    dump_stack();
+    var (queue, idx, player, f) = udict_delete_get_min_ref(queue, 4);
+    while (f) {
+        var (valid_until, player_hash, unit_pool) = get_candidate(player);
+        if (valid_until > now()) {
+            new_queue~udict_set_ref(4, idx, player);
+        } else {
+            var (s_user, f) = users.udict_get?(256, player_hash);
+            var (paid_until, in_game, bans_counter, units) = (0, 0, 0, new_dict());
+            if (f) {
+                (paid_until, in_game, bans_counter, units) = (s_user~load_uint(32), s_user~load_int(1), s_user~load_uint(32), s_user.preload_dict());
+            }
+            slice user = begin_cell()
+                .store_uint(paid_until, 32)
+                .store_int(in_game, 1)
+                .store_uint(bans_counter, 32)
+                .store_dict(units)
+                .end_cell()
+                .begin_parse();
+            users~udict_set(256, player_hash, user);
+        }
+        (queue, idx, player, f) = udict_delete_get_min_ref(queue, 4);
+    }
+    return (new_queue, users);
+}
+
+(cell, cell) remove_matches(cell matches, cell users) impure {
+    var (matches, idx, queue, f1) = udict_delete_get_min_ref(matches, 2);
+    var (matches, idx, games, f2) = udict_delete_get_min_ref(matches, 2);
+    ifnot (f1) {
+        (queue, users) = remove_from_queue(queue, users);
         ifnot (queue.null?()) {
             matches~udict_set_ref(2, 0, queue);
         }
     }
-    ifnot (games.null?()) {
+    ifnot (f2) {
         games = remove_expired(games, 4);
-        matches~udict_set_ref(2, 1, games);
         ifnot (games.null?()) {
             matches~udict_set_ref(2, 1, games);
         }
     }
-    return matches;
+    return (matches, users);
 }
 
 
@@ -332,12 +357,12 @@ cell remove_matches(cell matches) impure {
         ban_requests = remove_expired(ban_requests, 16);
     }
     ifnot (matches.null?()) {
-        ;; unlock_users(users, matches);
-        matches = remove_matches(matches);
+        (matches, users) = remove_matches(matches, users);
     }
     ifnot (users.null?()) {
         users = remove_expired(users, 256);
     }
+    dump_stack();
     return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
 }
 

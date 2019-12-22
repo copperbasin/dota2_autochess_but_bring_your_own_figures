@@ -16,7 +16,7 @@ module.exports =
     y = 0
     for unit, idx in window.unit_list
       # continue if idx % 12
-      continue if idx % 31
+      continue if idx != 5
       @unit_list.push {
         x
         y
@@ -41,7 +41,7 @@ module.exports =
       # t.total_count = idx % 9
       # return t
     shop_unit_list = clone(unit_list).map (t, idx)->
-      t.bought  = idx % 3
+      t.bought  = idx >= 5
       return t
     player_list = [
       {
@@ -70,10 +70,11 @@ module.exports =
                   width : "45%"
               }
                 Match_player_stats {
-                  hp    : 50
-                  gold  : 50
-                  exp   : 50
-                  level : 5
+                  hp    : 100
+                  gold  : 1
+                  gold  : 1
+                  exp   : 1
+                  level : 4
                 }
                 Chessboard_place {
                   unit_list       : @unit_list

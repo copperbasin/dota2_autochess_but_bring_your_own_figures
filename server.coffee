@@ -45,9 +45,7 @@ delivery.start {
 #    TON stuff
 # ###################################################################################################
 # TODO Когда я узнаю, что у lite-client'а есть RPC, то я это всё перепишу по-нормальному
-
-# TODO config
-contract_addr = "kf9ZUljHak4SJjG3GrEj-m_Qm4b_UeSP10ZejHdUFHvlQjFo"
+{contract_addr} = require("./config.json")
 
 my_wallet     = ""
 my_wallet2    = ""
