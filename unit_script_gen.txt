@@ -1,21 +1,3 @@
-#!/usr/bin/fift -s
-"TonUtil.fif" include
-"Asm.fif" include
-
-1 constant seqno
-variable prices 
-variable unit_price_lists 
-"build/update-prices-query"  constant savefile
-1000000 constant timeout
-"build/new-game" constant file-base
-file-base +".pk" load-generate-keypair constant game_pk drop
-file-base +".addr" load-address 2constant game_addr
-{ <b swap 32 u, b> <s } : create-price
-{ prices @ 8 udict!+ not abort"cannot add price to dictionary" prices ! } : add-price
-{ <b swap dict, b> <s } : create-unit-prices
-{ unit_price_lists @ 16 udict!+ not abort"cannot add unit lists to dictionary" unit_price_lists ! } : add-units-list
-
-dictnew unit_price_lists ! // dictionary with prices for all unit and levels
 dictnew prices ! 
 400 create-price 
 1 add-price 
@@ -315,12 +297,3 @@ dictnew prices !
 5 add-price 
 prices @ create-unit-prices
 50005 add-units-list
-
-<b seqno 32 u, now timeout + 32 u, 0xaa1122 32 u, unit_price_lists @ dict, b>
-dup hashu game_pk ed25519_sign_uint
-
-<b b{1000100} s, game_addr addr, 0 Gram, b{00} s, swap B, swap <s s, b>
-
-2 boc+>B 
-savefile +".boc" tuck B>file
-."(Saved to file " type .")" cr

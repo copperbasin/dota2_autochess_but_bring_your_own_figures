@@ -36,66 +36,97 @@ window.spec_list = str.split("\n").map (str)->
   {display_name, name}
 
 str = """
-                   ;axe                ;1;warrior       ;orc
-                   ;enchantress        ;1;druid         ;beast
-                   ;ogre_magi          ;1;mage          ;ogre
-                   ;tusk               ;1;warrior       ;beast
-                   ;drow_ranger        ;1;hunter        ;undead
-                   ;bounty_hunter      ;1;assasin       ;goblin
-                   ;clockwerk          ;1;mech          ;goblin
-s. shaman          ;shadow_shaman      ;1;shaman        ;troll
-                   ;batrider           ;1;knight        ;troll
-                   ;tinker             ;1;mech          ;goblin
-                   ;anti-mage          ;1;demon_hunter  ;elf
-                   ;crystal_maiden     ;2;mage          ;human
-                   ;beastmaster        ;2;hunter        ;orc
-                   ;juggernaut         ;2;warrior       ;orc
-                   ;timbersaw          ;2;mech          ;goblin
-                   ;queen_of_pain      ;2;assasin       ;demon
-                   ;puck               ;2;mage          ;elf
-                   ;witch_doctor       ;2;warlock       ;troll
-                   ;slardar            ;2;warrior       ;naga
-                   ;chaos_knight       ;2;knight        ;demon
-treant p.          ;treant_protector   ;2;druid         ;elf
-                   ;luna               ;3;knight        ;elf
-                   ;lycan              ;3;warrior       ;hunter
-                   ;venomancer         ;3;warlock       ;beast
-                   ;omniknight         ;3;knight        ;human
-                   ;razor              ;3;mage          ;elemental
-                   ;windranger         ;3;hunter        ;elf
-phantom a.         ;phantom_assassin   ;3;assasin       ;elf
-                   ;abaddon            ;3;knight        ;undead
-                   ;sand_king          ;3;assasin       ;beast
-                   ;slark              ;3;assasin       ;naga
-                   ;sniper             ;3;hunter        ;dwarf
-                   ;viper              ;3;assasin       ;dragon
-                   ;shadow_fiend       ;3;warlock       ;demon
-                   ;lina               ;3;mage          ;human
-                   ;doom               ;4;warrior       ;demon
-                   ;kunkka             ;4;warrior       ;human
-                   ;troll_warlord      ;4;warrior       ;troll
-K.O.T.L.           ;keeper_of_the_light;4;mage          ;human
-                   ;necrophos          ;4;warlock       ;undead
-templar a.         ;templar_assassin   ;4;assasin       ;elf
-                   ;alchemist          ;4;warlock       ;goblin
-                   ;disruptor          ;4;shaman        ;orc
-                   ;medusa             ;4;hunter        ;naga
-                   ;dragon_knight      ;4;knight        ;human
-                   ;gyrocopter         ;5;mech          ;dwarf
-                   ;lich               ;5;mage          ;undead
-                   ;tidehunter         ;5;hunter        ;naga
-                   ;enigma             ;5;warlock       ;elemental
-                   ;techies            ;5;mech          ;goblin
+10001;                   ;axe                ;1;warrior       ;orc
+10002;                   ;enchantress        ;1;druid         ;beast
+10003;                   ;ogre_magi          ;1;mage          ;ogre
+10004;                   ;tusk               ;1;warrior       ;beast
+10005;                   ;drow_ranger        ;1;hunter        ;undead
+10006;                   ;bounty_hunter      ;1;assasin       ;goblin
+10007;                   ;clockwerk          ;1;mech          ;goblin
+10008;s. shaman          ;shadow_shaman      ;1;shaman        ;troll
+10009;                   ;batrider           ;1;knight        ;troll
+10010;                   ;tinker             ;1;mech          ;goblin
+10011;                   ;anti-mage          ;1;demon_hunter  ;elf
+20001;                   ;crystal_maiden     ;2;mage          ;human
+20002;                   ;beastmaster        ;2;hunter        ;orc
+20003;                   ;juggernaut         ;2;warrior       ;orc
+20004;                   ;timbersaw          ;2;mech          ;goblin
+20005;                   ;queen_of_pain      ;2;assasin       ;demon
+20006;                   ;puck               ;2;mage          ;elf
+20007;                   ;witch_doctor       ;2;warlock       ;troll
+20008;                   ;slardar            ;2;warrior       ;naga
+20009;                   ;chaos_knight       ;2;knight        ;demon
+20010;treant p.          ;treant_protector   ;2;druid         ;elf
+30001;                   ;luna               ;3;knight        ;elf
+30002;                   ;lycan              ;3;warrior       ;hunter
+30003;                   ;venomancer         ;3;warlock       ;beast
+30004;                   ;omniknight         ;3;knight        ;human
+30005;                   ;razor              ;3;mage          ;elemental
+30006;                   ;windranger         ;3;hunter        ;elf
+30007;phantom a.         ;phantom_assassin   ;3;assasin       ;elf
+30008;                   ;abaddon            ;3;knight        ;undead
+30009;                   ;sand_king          ;3;assasin       ;beast
+30010;                   ;slark              ;3;assasin       ;naga
+30011;                   ;sniper             ;3;hunter        ;dwarf
+30012;                   ;viper              ;3;assasin       ;dragon
+30013;                   ;shadow_fiend       ;3;warlock       ;demon
+30014;                   ;lina               ;3;mage          ;human
+40001;                   ;doom               ;4;warrior       ;demon
+40002;                   ;kunkka             ;4;warrior       ;human
+40003;                   ;troll_warlord      ;4;warrior       ;troll
+40004;K.O.T.L.           ;keeper_of_the_light;4;mage          ;human
+40005;                   ;necrophos          ;4;warlock       ;undead
+40006;templar a.         ;templar_assassin   ;4;assasin       ;elf
+40007;                   ;alchemist          ;4;warlock       ;goblin
+40008;                   ;disruptor          ;4;shaman        ;orc
+40009;                   ;medusa             ;4;hunter        ;naga
+40010;                   ;dragon_knight      ;4;knight        ;human
+50001;                   ;gyrocopter         ;5;mech          ;dwarf
+50002;                   ;lich               ;5;mage          ;undead
+50003;                   ;tidehunter         ;5;hunter        ;naga
+50004;                   ;enigma             ;5;warlock       ;elemental
+50005;                   ;techies            ;5;mech          ;goblin
 """
 window.unit_list = str.split("\n").map (str)->
-  [display_name, type, level, _class, spec] = str.split(';').map((t)->t.trim())
+  [id, display_name, type, level, _class, spec] = str.split(';').map((t)->t.trim())
   display_name = display_name or type.replace(/_/g, ' ')
+  if id
+    id = +id
+  else
+    id = undefined
+  
   level = +level
   {
+    id
     display_name
     type
     level
     class: _class
     spec
   }
+
+
+window.dev_script_gen = (opt = {})->
+  opt.price ?= 400
+  res_list = []
+  level_hash = {
+    1 : 1
+    2 : 1
+    3 : 1
+    4 : 1
+    5 : 1
+  }
+  for unit in unit_list
+    id_lo = level_hash[unit.level]++
+    id = 10000*unit.level + id_lo
+    id = unit.id or id
+    
+    res_list.push """
+    dictnew prices !
+    #{opt.price} create-price
+    #{unit.level} add-price
+    prices @ create-unit-prices
+    #{id} add-units-list
+    """
   
+  res_list.join '\n\n'

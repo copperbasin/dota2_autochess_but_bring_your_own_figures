@@ -1,1 +1,1 @@
-window.figure_cost = 10
+window.min_figure_match_count = 8

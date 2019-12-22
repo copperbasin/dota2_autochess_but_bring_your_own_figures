@@ -3,9 +3,11 @@
 "Asm.fif" include
 
 "build/buy-unit"  constant savefile
-0 constant unit_id
-0 constant unit_level
-2 constant units_counter
+3 :$1..n
+$1 "0" replace-if-null parse-int =: unit_id
+$2 "0" replace-if-null parse-int =: unit_level
+$3 "8" replace-if-null parse-int =: units_counter
+
 
 <b 0xaaeeee 32 u, 0 64 u, unit_id 16 u, unit_level 8 u, units_counter 16 u,  b> 
 

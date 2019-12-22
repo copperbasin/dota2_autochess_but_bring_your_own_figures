@@ -6,9 +6,7 @@ module.exports =
     filter_spec_list    : []
     
     balance : -1
-    # key type
-    # player have
-    player_unit_hash : {} # get from smart contract
+    # key id
     # to buy
     to_buy_unit_hash : {}
   }
@@ -30,6 +28,24 @@ module.exports =
       return true if t.spec == unit.spec
     false
   
+  
+  listener_balance : null
+  listener_price : null
+  listener_count : null
+  mount: ()->
+    # TODO throttle
+    ton.on "balance", @listener_balance = (balance)=>
+      @set_state {balance}
+    ton.on "price_update", @listener_price = ()=>
+      @force_update()
+    ton.on "count_update", @listener_count = ()=>
+      @force_update()
+  
+  unmount : ()->
+    ton.off "balance",      @listener_balance
+    ton.off "price_update", @listener_price
+    ton.off "count_update", @listener_count
+  
   render : ()->
     filter_level        = if @state.filter_level == 'none' then null else +@state.filter_level.trim()
     filter_only_combo   = JSON.parse @state.filter_only_combo
@@ -37,9 +53,46 @@ module.exports =
     table {
       class: "h_layout_table reset_font center_pad"
       style:
-        width : 220+520
+        width : 220+600
     }
       tbody
+        tr
+          td {colSpan: 2}
+            level_count_hash = {
+              1:0
+              2:0
+              3:0
+              4:0
+              5:0
+            }
+            for unit in unit_list
+              if count = ton.owned_hash[unit.id]?.count
+                level_count_hash[unit.level] += count
+            table {class: "table center_pad"}
+              tr
+                th {rowSpan:3}, "Your figures by level"
+                th "Level"
+                for level in [1 .. 5]
+                  td level
+              tr
+                th "Count"
+                for level in [1 .. 5]
+                  td level_count_hash[level]
+              tr
+                th "Pass"
+                for level in [1 .. 5]
+                  td
+                    # TODO component
+                    if level_count_hash[level] >= min_figure_match_count
+                      img {
+                        class : "s_icon"
+                        src : "img/yes.png"
+                      }
+                    else
+                      img {
+                        class : "s_icon"
+                        src : "img/no.png"
+                      }
         tr
           td {
             style:
@@ -137,10 +190,12 @@ module.exports =
                 tr
                   td {colSpan : 2}
                     total_count = 0
-                    for k,v of @state.to_buy_unit_hash
-                      total_count += v
-                    total_cost = total_count*figure_cost
-                    div "Total cost: #{total_cost}"
+                    total_cost  = 0
+                    for id,v of @state.to_buy_unit_hash
+                      if price = ton.unit_price_hash[id]?.price
+                        total_cost += v*price
+                        total_count += v
+                    div "Total cost: #{(total_cost*1e-9).toFixed(9)}"
                     if total_count == 0
                       Start_button {
                         disabled: true
@@ -152,14 +207,14 @@ module.exports =
                       }
           td {
             style:
-              width: 550
+              width: 600
           }
             div {
               class: "scroll_container"
               style:
-                height: 885
+                height: 904
             }
-              colSpan = 7
+              colSpan = 8
               table {class:"table shop_table"}
                 tbody
                   tr
@@ -170,12 +225,13 @@ module.exports =
                     th {
                       style:
                         width: 120
-                    }, "name"
-                    th "lvl"
-                    th "class"
-                    th "spec"
-                    th "available"
-                    th "to buy"
+                    }, "Name"
+                    th "Lvl"
+                    th "Class"
+                    th "Spec"
+                    th "Owned"
+                    th "Price (nano)"
+                    th "To buy"
                   limit = @props.limit or 14 # any level fits
                   left = limit
                   for unit in @props.shop_unit_list
@@ -214,15 +270,20 @@ module.exports =
                       td {class: if check_spec then "check_pass" else default_class}
                         unit.spec
                       td {class: default_class}
-                        @state.player_unit_hash[unit.type] or 0
+                        if ton.owned_hash[unit.id]?
+                          ton.owned_hash[unit.id].count
+                        else
+                          "?"
+                      td {class: default_class}
+                        ton.unit_price_hash[unit.id]?.price or "?"
                       td {class: default_class}
                         do (unit)=>
                           Number_input {
-                            value : @state.to_buy_unit_hash[unit.type] or 0
+                            value : @state.to_buy_unit_hash[unit.id] or 0
                             on_change : (value)=>
                               value = 0 if value < 0 # плохо работает, но хотя бы так
                               to_buy_unit_hash = clone @state.to_buy_unit_hash
-                              to_buy_unit_hash[unit.type] = value
+                              to_buy_unit_hash[unit.id] = value
                               @set_state {to_buy_unit_hash}
                           }
                   if left == limit

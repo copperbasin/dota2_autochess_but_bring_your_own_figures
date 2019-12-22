@@ -1,0 +1,21 @@
+#!/usr/bin/fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+"build/line-up"  constant savefile
+500 constant timeout
+variable units
+1 :$1..n
+$1 "./fift_scripts/units-source.fif" replace-if-null  =: units-source
+
+{ <b swap 8 u, swap 16 u, b> <s } : create-units-per-level
+{ units @ 4 udict!+ not abort"cannot add unit to dictionary" units ! } : add-units-per-level
+dictnew units !
+
+units-source include
+
+<b 0xbbeeee 32 u, 0 64 u, now timeout + 32 u,  units @ dict, b> 
+
+2 boc+>B 
+savefile +".boc" tuck B>file
+."(Saved to file " type .")" cr

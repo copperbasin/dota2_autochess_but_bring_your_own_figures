@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "iced ./server.coffee",
-    "dev": "./loop.sh ./server.coffee --watch"
+    "dev": "./loop.sh ./server.coffee --watch",
+    "dev-docker": "./loop.sh ./server.coffee --watch --port=2337 --no_fift"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,7 @@
   "homepage": "https://github.com/copperbasin/dota2_autochess_but_bring_your_own_figures#readme",
   "dependencies": {
     "iced-coffee-script": "^108.0.14",
+    "lock_mixin": "github:hu2prod/lock_mixin",
     "webcom": "github:hu2prod/webcom",
     "webcom-client-plugin-base": "github:hu2prod/webcom-client-plugin-base",
     "webcom-engine-vendor": "github:hu2prod/webcom-engine-vendor"

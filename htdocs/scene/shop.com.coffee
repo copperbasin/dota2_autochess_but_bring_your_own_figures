@@ -17,7 +17,7 @@ module.exports =
       @set_state {address}
     
   unmount : ()->
-    ton.off "balance", @listener_address
+    ton.off "balance", @listener_balance
     ton.off "address", @listener_address
   
   render : ()->

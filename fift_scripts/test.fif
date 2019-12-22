@@ -1,5 +1,7 @@
-<b 382 12 u, b>
-dup
-<b swap ref, 12 32 u, b>
-<b 12 32 u, rot ref, b> 
-.s
+#!/usr/bin/fift -s
+"TonUtil.fif" include
+"build/new-game" constant file-base
+file-base +".addr" load-address 2constant game_addr
+
+
+<b game_addr  addr, bbits .s drop b>
