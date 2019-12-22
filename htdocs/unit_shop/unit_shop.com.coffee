@@ -8,7 +8,10 @@ module.exports =
     balance : -1
     # key id
     # to buy
-    to_buy_unit_hash : {}
+    to_buy_unit_hash  : {}
+    
+    buy_in_progress   : false
+    buy_status        : ''
   }
   
   check_same : (t)->
@@ -29,9 +32,9 @@ module.exports =
     false
   
   
-  listener_balance : null
-  listener_price : null
-  listener_count : null
+  listener_balance: null
+  listener_price  : null
+  listener_count  : null
   mount: ()->
     # TODO throttle
     ton.on "balance", @listener_balance = (balance)=>
@@ -45,6 +48,58 @@ module.exports =
     ton.off "balance",      @listener_balance
     ton.off "price_update", @listener_price
     ton.off "count_update", @listener_count
+  
+  buy : ()->
+    @set_state {buy_in_progress: true}
+    old_owned_hash = clone ton.owned_hash
+    await call_later defer()
+    
+    id_list = []
+    for id,count of @state.to_buy_unit_hash
+      id_list.push +id
+      ws_ton.write {
+        switch  : "buy_unit"
+        id      : id
+        level   : ton.unit_price_hash[id].level
+        count
+      }
+    
+    await setTimeout defer(), 1000
+    successful = false
+    for retry in [0 ... 30]
+      # debugger
+      ton.unit_count_request id_list
+      await setTimeout defer(), 1000
+      
+      to_buy_unit_hash = clone @state.to_buy_unit_hash
+      change_count = 0
+      for k,old_val of old_owned_hash
+        new_val = ton.owned_hash[k]
+        continue if new_val.count == old_val.count
+        diff = new_val.count - old_val.count
+        if diff > 0
+          old_owned_hash[k] = new_val
+          change_count++
+        to_buy_unit_hash[k] -= diff
+      
+      puts "change_count=#{change_count}"
+      continue if change_count == 0
+      
+      @set_state {to_buy_unit_hash}
+      await call_later defer()
+      buy_left = 0
+      for k,v of @state.to_buy_unit_hash
+        buy_left += v
+      puts "buy_left=#{buy_left}"
+      if buy_left == 0
+        successful = true
+        break
+    
+    @set_state {
+      buy_in_progress : false
+      buy_status      : if successful then 'successful' else 'failed'
+    }
+    return
   
   render : ()->
     filter_level        = if @state.filter_level == 'none' then null else +@state.filter_level.trim()
@@ -196,7 +251,12 @@ module.exports =
                         total_cost += v*price
                         total_count += v
                     div "Total cost: #{(total_cost*1e-9).toFixed(9)}"
-                    if total_count == 0
+                    if @state.buy_in_progress
+                      Start_button {
+                        disabled: true
+                        label: "Buy in progress"
+                      }
+                    else if total_count == 0
                       Start_button {
                         disabled: true
                         label: "Buy"
@@ -204,7 +264,13 @@ module.exports =
                     else
                       Start_button {
                         label: "Buy #{total_count}"
+                        on_click : ()=>@buy()
                       }
+                    switch @state.buy_status
+                      when "successful"
+                        span "successful"
+                      when "failed"
+                        span "failed"
           td {
             style:
               width: 600
@@ -289,5 +355,4 @@ module.exports =
                   if left == limit
                     tr
                       td {colSpan}, "No units"
-
   

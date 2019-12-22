@@ -31,6 +31,8 @@ delivery.start {
   ws_port : argv.ws_port
   watch_root  : true
   allow_hard_stop : true
+  watcher_ignore : (event, full_path)->
+    /\b(build|wallet)\b/.test full_path
   engine : {
     HACK_remove_module_exports : true
   }
@@ -131,6 +133,9 @@ buy_unit = (type_id, level, count)->
   figure_cost = get_price(type_id, level)
   return false if !figure_cost?
   cost  = figure_cost*count
+  # Но у нас не считается нормально газ... потому
+  cost = Math.min cost, 0.5
+  
   seqno = get_seqno()
   try
     easy_exec([
@@ -144,17 +149,16 @@ buy_unit = (type_id, level, count)->
     return false
   return
 
+# ###################################################################################################
+#    matchmaking
+# ###################################################################################################
+
 get_queue_len = (type_id, level, count)->
   try
     return res_parse easy_exec("lite-client -c 'runmethod #{contract_addr} getqueuelen' 2>&1 | grep result")
   catch err
     perr err
   null
-
-# ###################################################################################################
-#    matchmaking
-# ###################################################################################################
-
 
 # ###################################################################################################
 #    TON ws
@@ -247,10 +251,7 @@ ton_wss.on 'connection', (con)->
           }
         
       when "get_unit_count_multi_exec"
-        if !data.unit_list
-          perr "!data.unit_list"
-          return
-        
+        return perr "!data.unit_list" if !data.unit_list
         ctx_list = []
         for unit in data.unit_list
           # TOO slow for bulk
@@ -273,6 +274,9 @@ ton_wss.on 'connection', (con)->
         }
       
       when "buy_unit"
+        return perr "!data.id"    if !data.id
+        return perr "!data.level" if !data.level
+        return perr "!data.count" if !data.count
         result = buy_unit data.id, data.level, data.count
         con.write {
           uid : data.uid
@@ -294,6 +298,11 @@ ton_wss.write = (msg)->
   ton_wss.clients.forEach (con)-> # FUCK ws@2.2.0
     con.write msg
   return
+
+do ()->
+  loop
+    easy_exec "lite-client -c 'last' 2>&1"
+    await setTimeout defer(), 1000
 
 do ()->
   loop

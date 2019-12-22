@@ -35,9 +35,10 @@ class TON_account
     }
     return
   
-  unit_count_request : ()->
+  unit_count_request : (id_list)->
     req_unit_list = []
     for unit in unit_list
+      continue if id_list and !id_list.has unit.id
       req_unit_list.push {
         id    : unit.id
         level : unit.level
