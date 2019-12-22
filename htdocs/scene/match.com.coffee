@@ -74,7 +74,7 @@ module.exports =
                   gold  : 1
                   gold  : 1
                   exp   : 1
-                  level : 4
+                  level : 1
                 }
                 Chessboard_place {
                   unit_list       : @unit_list
