@@ -81,9 +81,10 @@ res_parse = (out) ->
 
 easy_exec = (t)->
   # sync and ONLY sync. Потому что иначе всё поломается т.к. не будет обновляться правильно seqno и запросы будут перетирать файлы друг-друга
+  puts "DEBUG easy_exec #{t}"
   execSync(t, {shell:"/bin/bash"}).toString().trim()
 get_seqno = ()->
-  easy_exec("lite-client -c 'runmethod #{my_wallet} seqno' 2>&1 | grep result | awk '{print $3}'")
+  easy_exec("lite-client -c 'runmethod #{my_wallet} seqno' 2>&1 | grep result: | awk '{print $3}'")
 
 # ###################################################################################################
 #    balance
@@ -107,7 +108,7 @@ get_balance = ()->
 #    shop
 # ###################################################################################################
 # in gramms
-get_price_cmd = (type_id, level)->"lite-client -c 'runmethod #{contract_addr} getprice #{type_id} #{level}' 2>&1 | grep result"
+get_price_cmd = (type_id, level)->"lite-client -c 'runmethod #{contract_addr} getprice #{type_id} #{level}' 2>&1 | grep result:"
 get_price = (type_id, level)->
   try
     out = easy_exec get_price_cmd(type_id, level)
@@ -116,7 +117,7 @@ get_price = (type_id, level)->
     perr err
   return null
 
-get_unit_count_cmd = (type_id, level)->"lite-client -c 'runmethod #{contract_addr} getunits #{my_work_chain} 0x#{my_wallet2} #{type_id} #{level}' 2>&1 | grep result"
+get_unit_count_cmd = (type_id, level)->"lite-client -c 'runmethod #{contract_addr} getunits #{my_work_chain} 0x#{my_wallet2} #{type_id} #{level}' 2>&1 | grep result:"
 get_unit_count = (type_id, level)->
   return perr "!my_work_chain" if !my_work_chain
   return perr "!my_wallet2" if !my_wallet2
@@ -154,7 +155,7 @@ buy_unit = (type_id, level, count)->
 
 get_queue_len = (type_id, level, count)->
   try
-    return res_parse easy_exec("lite-client -c 'runmethod #{contract_addr} getqueuelen' 2>&1 | grep result")
+    return res_parse easy_exec("lite-client -c 'runmethod #{contract_addr} getqueuelen' 2>&1 | grep result:")
   catch err
     perr err
   null
