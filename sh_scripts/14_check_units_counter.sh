@@ -13,8 +13,8 @@ do
         unit_arr=($unit)
         type=${unit_arr[0]}
         level=${unit_arr[1]}
-        ./lite-client/lite-client -C ./lite-client/ton-global.config -l null -c 'last'
+        lite-client -C ./ton-global.config -l null -c 'last'
         echo "      number of $type with level $level"
-        ./lite-client/lite-client -v 0 -C ./lite-client/ton-global.config -l /dev/null -c "runmethod $CONTRACT getunits -1 0x$user $type $level" 2>&1 | grep result | cut -d "[" -f2 | cut -d "]" -f1
+        lite-client -v 0 -C ./ton-global.config -l /dev/null -c "runmethod $CONTRACT getunits -1 0x$user $type $level" 2>&1 | grep result | cut -d "[" -f2 | cut -d "]" -f1
     done
 done

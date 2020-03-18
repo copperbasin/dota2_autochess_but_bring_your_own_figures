@@ -9,7 +9,7 @@
 $# 1- -2 and ' usage if
 
 $1 parse-workchain-id =: wc    // set workchain id from command line argument
-def? $2 { @' $2 } { "new-wallet" } cond constant file-base
+def? $2 { @' $2 } { "build/new-wallet" } cond constant file-base
 
 ."Creating new wallet in workchain " wc . cr
 

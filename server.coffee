@@ -1,30 +1,30 @@
 #!/usr/bin/env iced
 ### !pragma coverage-skip-block ###
-require 'fy'
-fs = require 'fs'
-require 'lock_mixin'
-{exec, execSync} = require 'child_process'
-argv = require('minimist')(process.argv.slice(2))
+require "fy"
+fs = require "fs"
+require "lock_mixin"
+{exec, execSync} = require "child_process"
+argv = require("minimist")(process.argv.slice(2))
 argv.port ?= 1337
 argv.ton_ws_port ?= 1338
 argv.ws_port ?= argv.port+10000
 {
   master_registry
   Webcom_bundle
-} = require 'webcom/lib/client_configurator'
-require 'webcom-client-plugin-base/src/hotreload'
-require 'webcom-client-plugin-base/src/react'
-require 'webcom-client-plugin-base/src/keyboard'
-delivery = require 'webcom/src/index'
+} = require "webcom/lib/client_configurator"
+require "webcom-client-plugin-base/src/hotreload"
+require "webcom-client-plugin-base/src/react"
+require "webcom-client-plugin-base/src/keyboard"
+delivery = require "webcom/src/index"
 
 bundle = new Webcom_bundle master_registry
-bundle.plugin_add 'Webcom hotreload'
-bundle.plugin_add 'Webcom react'
-bundle.plugin_add 'keyboard scheme'
+bundle.plugin_add "Webcom hotreload"
+bundle.plugin_add "Webcom react"
+bundle.plugin_add "keyboard scheme"
 bundle.feature_hash.hotreload = true
 
 delivery.start {
-  htdocs : 'htdocs'
+  htdocs : "htdocs"
   hotreload  : !!argv.watch
   title : "Dota2 autochess but bring your own figures"
   bundle
@@ -37,7 +37,7 @@ delivery.start {
   engine : {
     HACK_remove_module_exports : true
   }
-  vendor : 'react_min'
+  vendor : "react_min"
   gz : true
 }
 
@@ -75,7 +75,7 @@ multi_exec = (opt)->
 
 res_parse = (out) ->
   p "out :#{out}"
-  out = out.replace("result:", '').trim()
+  out = out.replace("result:", "").trim()
   return null if /error/.test out
   return JSON.parse(out)[0]
 
@@ -99,7 +99,7 @@ get_address = ()->
 get_balance = ()->
   return perr "!my_wallet" if !my_wallet
   try
-    my_balance = easy_exec("lite-client -c 'getaccount #{my_wallet}' 2>&1 | grep nanograms -A 1 | tail -1 | awk '{print $3}'").replace(/\D/g, '')*1e-9
+    my_balance = easy_exec("lite-client -c 'getaccount #{my_wallet}' 2>&1 | grep nanograms -A 1 | tail -1 | awk '{print $3}'").replace(/\D/g, "")*1e-9
   catch err
     perr err
 
@@ -177,20 +177,20 @@ line_up = ()->
 #    TON ws
 # ###################################################################################################
 return if argv.no_fift
-WebSocketServer = require('ws').Server
+WebSocketServer = require("ws").Server
 ton_wss = new WebSocketServer
   port: argv.ton_ws_port
 
 address_msg = ()->{switch: "address", address:my_wallet, my_work_chain, my_wallet2}
 balance_msg = ()->{switch: "balance", balance:my_balance}
 
-ton_wss.on 'connection', (con)->
+ton_wss.on "connection", (con)->
   con.write = (msg)->
-    if typeof msg == 'string' or msg instanceof Buffer
+    if typeof msg == "string" or msg instanceof Buffer
       return con.send msg, (err)->
-        perr 'ws', err if err
+        perr "ws", err if err
     return con.send JSON.stringify(msg), (err)->
-      perr 'ws', err if err
+      perr "ws", err if err
   con.write address_msg()
   con.write balance_msg()
   con.on "message", (msg)->
@@ -200,6 +200,24 @@ ton_wss.on 'connection', (con)->
       perr err
       return
     switch data.switch
+      when "create_wallet"
+        try
+          easy_exec "./sh_scripts/01_create_wallet.sh"
+          easy_exec "./sh_scripts/02_broadcast_wallet.sh"
+          con.write {
+            switch: "create_wallet"
+            res: "script ok"
+          }
+          get_address()
+          get_balance()
+          con.write address_msg()
+          con.write balance_msg()
+        catch err
+          perr err
+          con.write {
+            switch: "create_wallet"
+            err: err.message
+          }
       # ###################################################################################################
       #    shop/figures/player figures etc
       # ###################################################################################################
@@ -355,5 +373,5 @@ do ()->
 # ###################################################################################################
 #    safety
 # ###################################################################################################
-process.on 'uncaughtException', (err, origin) ->
+process.on "uncaughtException", (err, origin) ->
   perr err

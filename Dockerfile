@@ -9,7 +9,7 @@ SHELL ["/bin/bash", "-c"]
 WORKDIR /src
 
 # TODO for cache invalidation just change date
-RUN echo "21.12.2019" && apt-get update
+RUN echo "18.03.2020" && apt-get update
 
 RUN apt-get install -y htop atop iotop screen tmux mc git nano curl wget g++ build-essential gcc make cmake autoconf automake psmisc pciutils lm-sensors ethtool
 

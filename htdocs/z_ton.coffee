@@ -1,5 +1,11 @@
 ws_protocol = if location.protocol == 'http:' then "ws:" else "wss:"
-window.ws_ton = new Websocket_wrap "#{ws_protocol}//#{location.hostname}:1338"
+
+if reg_ret = /^1337(\d)$/.exec location.port
+  # mode multiple_docker_sandbox
+  [_skip, node_id] = reg_ret
+  window.ws_ton = new Websocket_wrap "#{ws_protocol}//#{location.hostname}:1338#{node_id}"
+else
+  window.ws_ton = new Websocket_wrap "#{ws_protocol}//#{location.hostname}:1338"
 json_cmp = (a,b)->JSON.stringify(a) == JSON.stringify(b)
 
 class TON_account
@@ -88,7 +94,7 @@ class TON_account
   
   unit_price_request : ()->
     req_unit_list = []
-    for unit in unit_list
+    for unit in window.unit_list
       req_unit_list.push {
         id    : unit.id
         level : unit.level

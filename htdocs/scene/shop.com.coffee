@@ -39,6 +39,14 @@ module.exports =
           balance = balance.toFixed(9)
         div "Address: #{@state.address}"
         div "Balance: #{balance} gramm"
+        if !@state.address
+          Button {
+            label: "create"
+            on_click: ()=>
+              ws_ton.write {
+                switch    : "create_wallet"
+              }
+          }
         Unit_shop {
           # костыль
           available_unit_list : []
