@@ -1,0 +1,28 @@
+#!/usr/bin/fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+"build/send-round-results"  constant savefile
+"./fift_scripts/results-source.fif" constant  results-source
+variable boards
+variable new_players_state
+
+{ <b swap 4 u, swap 16 u, swap 16 u, b> <s } : create-board
+{ boards @ 4 udict!+ not abort"cannot add location to dictionary" boards ! } : add-board
+{ <b swap 8 u, swap 8 u, swap 8 u, swap 8 u, b> <s } : create-updated-player
+{ new_players_state @ 4 udict!+ not abort"cannot add location to dictionary" new_players_state ! } : add-updated-player
+
+dictnew boards !
+dictnew new_players_state !
+
+1 :$1..n
+$1 parse-int =: game_idx
+$2 parse-int =: player_idx
+
+results-source include
+
+<b 0xddeeee 32 u, 0 64 u, player_idx 8 u, game_idx 8 u, boards @ dict, new_players_state @ dict, b> 
+
+2 boc+>B 
+savefile +".boc" tuck B>file
+."(Saved to file " type .")" cr

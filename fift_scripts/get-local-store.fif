@@ -1,0 +1,33 @@
+#!/usr/bin/fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+106679 constant getlocallevelstore
+3 :$1..n
+$1 "1" replace-if-null parse-int =: game_idx
+
+"build/new-game" constant file-base
+"build/contract.boc" file>B B>boc constant updated_storage
+"build/game-code.fif" include <s constant code
+file-base +".addr" load-address 2constant dest_addr
+
+0 tuple 0x076ef1ea ,
+0 , 0 , 
+1570470873 ,
+1 , 1 , 0 , 
+0 tuple 9223372036854775807 , dictnew , , 
+dest_addr nip , dictnew , 
+1 tuple 
+constant c7
+
+game_idx 1 getlocallevelstore code updated_storage c7 runvmctx 
+2drop
+game_idx 2 getlocallevelstore code updated_storage c7 runvmctx 
+2drop
+game_idx 3 getlocallevelstore code updated_storage c7 runvmctx 
+2drop
+game_idx 4 getlocallevelstore code updated_storage c7 runvmctx 
+2drop 
+game_idx 5 getlocallevelstore code updated_storage c7 runvmctx 
+2drop 
+.s

@@ -1,3 +1,3 @@
 #!/bin/sh
-./lite-client/lite-client -C ./lite-client/ton-global.config -c 'last'
-./lite-client/lite-client -C ./lite-client/ton-global.config -c 'sendfile ./build/new-wallet-query.boc'
+./lite-client/lite-client -v 0 -C ./lite-client/ton-global.config -l /dev/null -c 'last'
+./lite-client/lite-client -v 0 -C ./lite-client/ton-global.config -l /dev/null -c 'sendfile ./build/new-wallet-query.boc'

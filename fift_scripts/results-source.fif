@@ -1,0 +1,54 @@
+// add your units for match in form: 
+//
+// UNIT_ID CONTER create-units-per-level
+// LEVEL add-units-per-level
+
+// add boards
+1 1 0 create-board
+1 add-board
+
+1 1 1 create-board
+2 add-board
+
+3 1 1 create-board
+3 add-board
+
+1 1 0 create-board
+4 add-board
+
+1 1 1 create-board
+5 add-board
+
+1 1 1 create-board
+6 add-board
+
+2 1 0 create-board
+7 add-board
+
+1 1 0 create-board
+8 add-board
+
+// add player states
+90 100 1 3 create-updated-player
+1 add-updated-player
+
+94 120 1 3 create-updated-player
+2 add-updated-player
+
+50 106 2 4 create-updated-player
+3 add-updated-player
+
+10 150 1 2 create-updated-player
+4 add-updated-player
+
+90 150 1 3 create-updated-player
+5 add-updated-player
+
+70 105 1 3 create-updated-player
+6 add-updated-player
+
+70 100 3 3 create-updated-player
+7 add-updated-player
+
+75 109 1 3 create-updated-player
+8 add-updated-player

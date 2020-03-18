@@ -1,7 +1,0 @@
-#!/usr/bin/fift -s
-"TonUtil.fif" include
-"build/new-game" constant file-base
-file-base +".addr" load-address 2constant game_addr
-
-
-<b game_addr  addr, bbits .s drop b>

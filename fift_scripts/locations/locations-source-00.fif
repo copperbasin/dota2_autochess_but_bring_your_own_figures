@@ -1,0 +1,12 @@
+// add your units for match in form: 
+//
+// UNIT_ID CONTER create-units-per-level
+// LEVEL add-units-per-level
+1 player_idx !
+1 game_idx !
+
+dictnew locations !
+dictnew locations_per_level !
+10 10 create-location-per-level
+2 add-location-per-level
+create-location 1 add-location

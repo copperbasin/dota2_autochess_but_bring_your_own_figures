@@ -2,7 +2,9 @@
 "TonUtil.fif" include
 "Asm.fif" include
 
-1 constant seqno
+1 :$1..n
+$1 parse-int =: seqno
+
 variable prices 
 variable unit_price_lists 
 "build/update-prices-query"  constant savefile
@@ -17,301 +19,301 @@ file-base +".addr" load-address 2constant game_addr
 
 dictnew unit_price_lists ! // dictionary with prices for all unit and levels
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10001 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10002 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10003 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10004 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10005 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10006 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10007 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10008 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10009 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10010 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 1 add-price 
 prices @ create-unit-prices
 10011 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20001 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20002 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20003 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20004 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20005 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20006 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20007 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20008 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20009 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 2 add-price 
 prices @ create-unit-prices
 20010 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30001 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30002 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30003 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30004 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30005 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30006 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30007 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30008 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30009 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30010 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30011 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30012 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30013 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 3 add-price 
 prices @ create-unit-prices
 30014 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40001 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40002 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40003 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40004 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40005 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40006 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40007 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40008 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40009 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 4 add-price 
 prices @ create-unit-prices
 40010 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 5 add-price 
 prices @ create-unit-prices
 50001 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 5 add-price 
 prices @ create-unit-prices
 50002 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 5 add-price 
 prices @ create-unit-prices
 50003 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 5 add-price 
 prices @ create-unit-prices
 50004 add-units-list
 
 dictnew prices ! 
-400 create-price 
+1000 create-price 
 5 add-price 
 prices @ create-unit-prices
 50005 add-units-list

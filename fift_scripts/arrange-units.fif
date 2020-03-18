@@ -1,0 +1,25 @@
+#!/usr/bin/fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+"build/arrange-units"  constant savefile
+500 constant timeout
+variable locations_per_level
+variable locations
+variable player_idx
+variable game_idx
+1 :$1..n
+$1 "./fift_scripts/locations-source.fif" replace-if-null  =: locations-source
+
+{ <b swap 16 u, swap 16 u, b> <s } : create-location-per-level
+{ locations_per_level @ 16 udict!+ not abort"cannot add location to dictionary" locations_per_level ! } : add-location-per-level
+{ <b locations_per_level @ dict, b> <s } : create-location
+{ locations @ 4 udict!+ not abort"cannot add location to dictionary" locations ! } : add-location
+
+locations-source include
+
+<b 0xcceeee 32 u, 0 64 u, player_idx @ 8 u, game_idx @ 8 u, locations @ dict,  b> 
+
+2 boc+>B 
+savefile +".boc" tuck B>file
+."(Saved to file " type .")" cr

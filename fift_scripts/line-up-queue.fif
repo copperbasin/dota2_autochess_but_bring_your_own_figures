@@ -8,7 +8,7 @@ variable units
 1 :$1..n
 $1 "./fift_scripts/units-source.fif" replace-if-null  =: units-source
 
-{ <b swap 8 u, swap 16 u, b> <s } : create-units-per-level
+{ <b 3 roll s, swap 8 u, swap 16 u, b> <s } : create-units-per-level
 { units @ 4 udict!+ not abort"cannot add unit to dictionary" units ! } : add-units-per-level
 dictnew units !
 
