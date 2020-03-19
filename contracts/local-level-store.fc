@@ -1,0 +1,97 @@
+forall X -> tuple tuple_push(tuple list, X x) asm "TPUSH";
+forall X -> (tuple, X) tuple_pop(tuple list) asm "TPOP";
+forall X -> tuple tuple_set_index(tuple list, X x, int k) asm "SETINDEXVAR";
+forall X -> X tuple_get_index(tuple list, int k) asm "INDEXVAR";
+forall X -> tuple single(X x) asm "SINGLE";
+
+
+tuple cell_to_tuple(cell list_cell, int key_len ) impure {
+    var list = nil;
+    int tuple_len = 0;
+    var el_slice = list_cell.udict_get_ref(key_len, tuple_len);
+    while (~ el_slice.null?()) {
+        int el = el_slice.begin_parse().preload_uint(4);
+        ifnot (tuple_len) {
+            list = single(el);
+        } else {
+            list = tuple_push(list, el);
+        }
+        tuple_len += 1;
+        el_slice = list_cell.udict_get_ref(key_len, tuple_len);
+    }
+    return list
+}
+
+int get_players_count(cell players) impure {
+    cell players_counter_cell = udict_get_ref(players, 8, 0);
+    ifnot (players_counter_cell.null?()) {
+        slice s_counter = players_counter_cell.begin_parse();
+        return s_counter.preload_uint(16);
+    }
+    return 0;
+}
+
+tuple exchange(tuple list, idx_a, int idx_b) impure {
+    int tmp_value = tuple_get_index(list, idx_a);
+    list = tuple_set_index(list, tuple_get_index(list, idx_b), idx_a);
+    return tuple_set_index(list, tmp_value, idx_b);
+}
+
+tuple distribute_units_per_level(int units_per_level_count, int players_count) impure {
+    int units_per_player_count = units_per_level_count / players_count;
+    var units_distribution_per_level = nil;
+    int tuple_len = 0;
+    int player_idx = 0; 
+    while ((player_idx < players_count) & (tuple_len < units_per_level_count)) {
+        ifnot (tuple_len) {
+            units_distribution_per_level = single(player_idx + 1);
+        } else {
+            units_distribution_per_level = tuple_push(units_distribution_per_level, player_idx + 1);
+        }
+        player_idx += 1;
+        if (player_idx == players_count) {
+            player_idx = 0;
+        }
+        tuple_len += 1;
+    }
+    ;; shuffle
+    while (tuple_len) {
+        int r = rand(tuple_len);
+        tuple_len -= 1;
+        units_distribution_per_level = exchange(units_distribution_per_level, r, tuple_len);
+    }
+    return units_distribution_per_level;
+}
+
+cell tuple_to_cell(tuple list, int key_len, int list_len) impure {
+    cell list_cell = new_dict();
+    while(list_len) {
+        int el = 0;
+        (list, el) = tuple_pop(list);
+        list_len -= 1;
+        list_cell~udict_set_ref(8, list_len, begin_cell().store_uint(el, key_len).end_cell());
+    }
+    return list_cell;
+}
+
+cell create_store(cell unit_pool_by_level, cell players) impure {
+    int players_count = get_players_count(players);
+    cell level_distribution = new_dict();
+    cell units_counter_by_level = udict_get_ref(unit_pool_by_level, 8, 0);
+    var (units, level, f) = udict_get_min?(units_counter_by_level, 16);
+    while (f) {
+        int units_per_level_count = units.preload_uint(16);
+        var units_distribution_per_level = distribute_units_per_level(units_per_level_count, players_count);
+        cell units_distribution = tuple_to_cell(units_distribution_per_level, 4, units_per_level_count);
+        level_distribution~udict_set_ref(4, level, units_distribution);
+        (level, units, f) = udict_get_next?(units_counter_by_level, 16, level);
+    }
+    return level_distribution;
+}
+
+
+tuple getlocallevelstore(int game_idx, int level, cell unit_pool_by_level, cell players, int seed) method_id {
+    set_seed(seed);
+    cell store = create_store(unit_pool_by_level, players);
+    return cell_to_tuple(udict_get_ref(store, 4, level), 8);
+}

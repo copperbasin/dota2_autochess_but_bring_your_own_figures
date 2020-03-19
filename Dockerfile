@@ -63,4 +63,6 @@ COPY _ss.sh .
 RUN source ~/.nvm/nvm.sh && npm ci
 RUN chmod +x ./sh_scripts/*
 
+RUN func -P -o build/game-code.fif contracts/stdlib.fc contracts/game-code.fc
+
 CMD /bin/bash ./wrapper.sh

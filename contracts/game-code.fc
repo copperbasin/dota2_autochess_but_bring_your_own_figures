@@ -2,8 +2,16 @@
 (cell, int, int) udict_get_max_ref(cell dict, int key_len) asm "DICTUMAXREF" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
 (cell, (int, cell, int)) ~udict::delete_get_min_ref(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMINREF" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
 (cell, int, cell, int) udict_delete_get_min_ref(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMINREF" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
-
+(cell, int, cell, int) udict_delete_get_max_ref(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMAXREF" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
 (slice, int, int) udict_get_min?(cell dict, int key_len) asm "DICTUMIN" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
+(slice, int, int) udict_get_max?(cell dict, int key_len) asm "DICTUMAX" "NULLSWAPIFNOT" "NULLSWAPIFNOT";
+
+forall X -> tuple tuple_push(tuple list, X x) asm "TPUSH";
+forall X -> (tuple, X) tuple_pop(tuple list) asm "TPOP";
+forall X -> tuple tuple_set_index(tuple list, X x, int k) asm "SETINDEXVAR";
+forall X -> X tuple_get_index(tuple list, int k) asm "INDEXVAR";
+forall X -> tuple single(X x) asm "SINGLE";
+
 
 (cell, cell, cell, cell, int, int) load_data() method_id {
     ;; dict users, dict matches, dict prices, dict ban_requests, int seqno, int pubkey
@@ -27,25 +35,24 @@
         .end_cell());
 }
 
-cell create_user(slice owner_address, cell users, int paid_until, int in_game, int bans_counter, cell units) impure {
+cell create_user(int owner_hash, cell users, int paid_until, int game_idx, cell bans_counter, cell units) impure {
     slice user = begin_cell()
         .store_uint(paid_until, 32)
-        .store_int(in_game, 1)
-        .store_uint(bans_counter, 32)
+        .store_uint(game_idx, 8)
+        .store_dict(bans_counter)
         .store_dict(units)
         .end_cell()
         .begin_parse();
-    users~udict_set(256, slice_hash(owner_address), user);
+    users~udict_set(256, owner_hash, user);
     return users;
 }
 
-(int, int, int, cell) get_user(slice owner_address, cell users) method_id {
-    ;; int paid_until, int in_game, int bans_counter, cell units
-    (slice s_user, int f) = users.udict_get?(256, slice_hash(owner_address));
+(int, int, cell, cell) get_user(int owner_hash, cell users) method_id {
+    var ( s_user, f) = users.udict_get?(256, owner_hash);
     ifnot (f) {
-        return (0, 0, 0, new_dict());
+        return (0, 0, new_dict(), new_dict());
     }
-    return (s_user~load_uint(32), s_user~load_int(1), s_user~load_uint(32), s_user.preload_dict());
+    return (s_user~load_uint(32), s_user~load_uint(8), s_user~load_dict(), s_user.preload_dict());
 
 }
 
@@ -55,8 +62,7 @@ cell create_user(slice owner_address, cell users, int paid_until, int in_game, i
 }
 
 int get_price(cell prices, int unit_id, int unit_level) method_id {
-    ;;cell unit = udict_get_ref(prices, 16, unit_id);
-    (slice s_unit, int f) = prices.udict_get?(16, unit_id);
+    var ( s_unit, f) = prices.udict_get?(16, unit_id);
     ifnot (f) {
         return -1;
     }
@@ -65,94 +71,112 @@ int get_price(cell prices, int unit_id, int unit_level) method_id {
         return 0; 
     }
 
-    (slice s_price, int f) = unit.udict_get?(8, unit_level);
+    var (s_price, f) = unit.udict_get?(8, unit_level);
     ifnot (f) {
         return -1;
     }
     return s_price.preload_uint(32);
 }
-
-int get_unit(cell units, int unit_id, int unit_level) method_id {
+int get_unit_counter(cell units, int unit_id, int unit_level) method_id {
     cell units_by_level = udict_get_ref(units, 8, unit_level);
     (slice s_counter, int f) = units_by_level.udict_get?(16, unit_id);
-    int counter = 0;
     if (f) {
-        counter = s_counter.preload_uint(16);
+        return s_counter.preload_uint(16);
     }
-    return counter;
+    return 0;
 }
 
-cell update_units_counter(cell units, int unit_id, int unit_level, int units_counter, int shouldAdd) impure {
+cell update_units_counter(cell units, int unit_id, int unit_level, int units_counter) impure {
     cell units_by_level = udict_get_ref(units, 8, unit_level);
     (slice s_counter, int f) = units_by_level.udict_get?(16, unit_id);
     int counter = 0;
     if (f) {
         counter = s_counter.preload_uint(16);
     }
-    if (shouldAdd) {
-        counter += units_counter;
-        throw_if(52, counter > 255); ;; too many units of one type
-    } else {
-        counter -= units_counter;
-        throw_if(53, counter < 0); ;; underflow units of one type
-    }
+    counter += units_counter;
+    throw_if(52, counter > 255); ;; too many units of one type
+    throw_if(53, counter < 0); ;; underflow units of one type
     units_by_level~udict_set(16, unit_id, begin_cell().store_uint(counter, 16).end_cell().begin_parse());
     units~udict_set_ref(8, unit_level, units_by_level);
     return units;
 }
 
+cell update_units_list(cell units, int unit_id, int unit_level, int counter) impure {
+    cell units_by_level = udict_get_ref(units, 8, unit_level);
+    var(unit_type, idx, f) = udict_get_max?(units_by_level, 16);
+    ifnot (f) {
+        idx = 0;
+    }
+    while (counter) {
+        idx += 1;
+        units_by_level~udict_set(16, idx, begin_cell().store_uint(unit_id, 16).end_cell().begin_parse());
+        counter -= 1;
+    }
+    return units.udict_set_ref(8, unit_level, units_by_level);
+}
+
 () buy_unit(slice owner_address, int unit_id, int unit_level, int units_counter, int msg_value) impure {
-    (cell users, cell matches, cell prices, cell ban_requests, int stored_seqno, int public_key) = load_data();
+    var (users, matches, prices, ban_requests, stored_seqno, public_key) = load_data();
     int price = get_price(prices, unit_id, unit_level);
     throw_if(50, price == -1); ;; unit can't be sold
     throw_if(51, price * units_counter > msg_value); ;; unsufficient funds
-    (int paid_until, int in_game, int bans_counter, cell units) = get_user(owner_address, users);
-    units = update_units_counter(units, unit_id, unit_level, units_counter, true);
-    users = create_user(owner_address, users, now() + 100000, in_game, bans_counter, units);
+    int owner_hash = slice_hash(owner_address);
+    var (paid_until, in_game, bans_counter, units) = get_user(owner_hash, users);
+    units = update_units_counter(units, unit_id, unit_level, units_counter);
+    users = create_user(owner_hash, users, now() + 100000, in_game, bans_counter, units);
     return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
-}
-
-(cell, int) push_queue(cell matches, slice owner_address, int valid_until, cell unit_pool) impure {
-    cell queue = udict_get_ref(matches, 2, 0);
-    var (last_player, idx, f) = udict_get_max_ref(queue, 4);
-    if (f) {
-        idx += 1;
-    } else {
-        idx = 0;
-    }
-    cell player = begin_cell()
-        .store_uint(valid_until, 32)
-        .store_uint(slice_hash(owner_address), 256)
-        .store_dict(unit_pool)
-        .end_cell();
-    queue~udict_set_ref(4, idx, player);
-    matches~udict_set_ref(2, 0, queue);
-    return (matches, idx);
 }
 
 (int, int, cell) get_candidate(cell player) method_id {
     slice s_player = player.begin_parse();
-    return (s_player~load_uint(32), s_player~load_int(256), s_player.preload_dict());
+    return (s_player~load_uint(32), s_player~load_uint(256), s_player.preload_dict());
 }
 
 cell store_player(cell players, int idx, int player_hash, cell unit_pool, int gold, int level, int exp, int hp) impure {
     cell player = begin_cell()
+        .store_uint(player_hash, 256)
         .store_uint(gold, 8)
         .store_uint(level, 8)
         .store_uint(exp, 8)
         .store_uint(hp, 8)
-        .store_int(player_hash, 256)
         .store_dict(unit_pool)
         .end_cell();
     players~udict_set_ref(8, idx, player);
     return players;
 }
 
+(int, int, int, int, int, cell) get_player(cell players, int idx) impure {
+    cell player = players.udict_get_ref(8, idx);
+    if (player.null?()) {
+        return (0, 0, 0, 0, 0, player);
+    }
+    slice player_slice = player.begin_parse();
+    return (
+        player_slice~load_uint(256),
+        player_slice~load_uint(8),
+        player_slice~load_uint(8),
+        player_slice~load_uint(8),
+        player_slice~load_uint(8),
+        player_slice.preload_dict());
+}
+
+(int, int, int, int) get_player_state(cell players, int idx) impure {
+    var (player, f) = players.udict_get?(8, idx);
+    ifnot (f) {
+        return (0, 0, 0, 0);
+    }
+    return (
+        player~load_uint(8),
+        player~load_uint(8),
+        player~load_uint(8),
+        player.preload_uint(8));
+}
+
 cell create_game(cell games, int idx, int valid_unitl, int should_start_round, cell unit_pool_by_level, cell players, cell current_round, cell last_round_results, int timeout) impure {
     cell game = begin_cell()
         .store_uint(valid_unitl, 32)
         .store_int(should_start_round, 1)
-        .store_uint(timeout, 32) ;; TODO: should update
+        .store_uint(timeout, 32)
         .store_dict(unit_pool_by_level)
         .store_dict(players)
         .store_dict(current_round)
@@ -171,75 +195,324 @@ cell create_game(cell games, int idx, int valid_unitl, int should_start_round, c
     slice s_game = game.begin_parse();
     return (
         s_game~load_uint(32),
-        s_game~load_uint(1),
+        s_game~load_int(1),
         s_game~load_uint(32),
         s_game~load_dict(),
         s_game~load_dict(),
         s_game~load_dict(),
-        s_game~load_dict()
+        s_game.preload_dict()
     );
 }
 
-cell start_game(cell matches) impure {
-    var (matches, idx, queue, f) = udict_delete_get_min_ref(matches, 2);
-    cell games = udict_get_ref(matches, 2, 1);
-    cell unit_pool_by_level = new_dict(); 
-    int i = 0;
-    cell players = new_dict();
-    var (queue, idx, player, f) = udict_delete_get_min_ref(queue, 4);
-    while (f) {
-        var (valid_until, player_hash, unit_pool) = get_candidate(player);
-        var (unit_pool, level, level_units, f1) = udict_delete_get_min(unit_pool, 4);
-        while (f1) {
-            while (level_units.slice_bits()) {
-                (int counter, int unit_id) = (level_units~load_uint(8), level_units~load_uint(16));
-                unit_pool_by_level = update_units_counter(unit_pool_by_level, unit_id, level, counter, true);
-            }
-            (unit_pool, level, level_units, f1) = udict_delete_get_min(unit_pool, 4);
+tuple cell_to_tuple(cell list_cell, int key_len ) impure {
+    var list = nil;
+    int tuple_len = 0;
+    var el_slice = list_cell.udict_get_ref(key_len, tuple_len);
+    while (~ el_slice.null?()) {
+        int el = el_slice.begin_parse().preload_uint(4);
+        ifnot (tuple_len) {
+            list = single(el);
+        } else {
+            list = tuple_push(list, el);
         }
-        players = store_player(players, idx, player_hash, new_dict(), 1, 1, 0, 100);
-        (queue, idx, player, f) = udict_delete_get_min_ref(queue, 4);
+        tuple_len += 1;
+        el_slice = list_cell.udict_get_ref(key_len, tuple_len);
     }
-    var (last_game, idx, f) = udict_get_max_ref(games, 8);
-    if(f) {
-        idx += 1;
-    } else {
-        idx = 0;
-    }
-    games = create_game(games, idx, now() + 40000, true, unit_pool_by_level, players, new_dict(), new_dict(), 720000);
-    matches~udict_set_ref(2, 1, games);
-    return matches;
+    return list;
 }
+
+cell update_players_counter(cell players, int players_counter, int key_len, int idx) impure {
+    cell players_counter_cell = udict_get_ref(players, key_len, idx);
+    int counter = 0;
+    ifnot (players_counter_cell.null?()) {
+        slice s_counter = players_counter_cell.begin_parse();
+        counter = s_counter.preload_uint(16);
+    }
+    counter += players_counter;
+    players~udict_set_ref(key_len, idx, begin_cell().store_uint(counter, 16).end_cell());
+    return players;
+}
+
+int get_players_count(cell players) impure {
+    cell players_counter_cell = udict_get_ref(players, 8, 0);
+    ifnot (players_counter_cell.null?()) {
+        slice s_counter = players_counter_cell.begin_parse();
+        return s_counter.preload_uint(16);
+    }
+    return 0;
+}
+;; TODO: restrict changes
+;; TODO: optimize store
+() arrange_units(slice owner_address, int player_idx, int idx, cell locations) impure {
+    (cell users, cell matches, cell prices, cell ban_requests, int stored_seqno, int public_key) = load_data();
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, idx);
+    throw_if(59, timeout < now());
+    throw_if(62, locations.null?());
+    var (player_hash, gold, user_level, exp, hp, unit_pool) = get_player(players, player_idx);
+    throw_unless(63, player_hash == slice_hash(owner_address));
+    var (level_info, level, f1) = udict_get_min?(locations, 4);
+    while (f1) {
+        cell level_distribution = level_info.preload_dict();
+        var (coordinats, unit_idx, f2) = udict_get_min?(level_distribution, 16);
+        while (f2) {
+            ;; var (x, y) = (coordinats~load_int(16), coordinats~load_int(16));
+            gold -= 1;
+            throw_if(61, gold < 0); ;; not enoght money
+            (unit_idx, coordinats, f2) = udict_get_next?(level_distribution, 16, unit_idx);
+        }
+        
+        (level, level_info, f1) = udict_get_next?(locations, 4, level);
+    }
+    cell positions = udict_get_ref(current_round, 4, 1);
+    positions~udict_set_ref(8, player_idx, locations);
+    current_round~udict_set_ref(4, 1, positions);
+    current_round = update_players_counter(current_round, 1, 4, 2);
+    players = store_player(players, player_idx, player_hash, unit_pool, gold, user_level, exp, hp);
+    games = create_game(games, idx, valid_unitl, udict_get_ref(current_round, 4, 2).begin_parse().preload_uint(16) < get_players_count(players), unit_pool_by_level, players, current_round, last_round_results, timeout);
+    matches~udict_set_ref(2, 1, games);
+    return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
+}
+
+
+cell update_board(cell boards, int new_result, int new_units_count, int new_stars, int idx, int shouldAdd) impure {
+    var (board_info, f) = udict_get?(boards, 4, idx);
+    int result = 0;
+    int units_count = 0;
+    int stars = 0;
+    if (f) {
+        (result, units_count, stars) = (board_info~load_uint(8), board_info~load_uint(32), board_info.preload_uint(32));
+    }
+    if (shouldAdd) {
+        result += new_result;
+        units_count += new_units_count;
+        stars += new_stars;
+    } else {
+        result /= new_result;
+        units_count /= new_result;
+        stars /= new_result;
+    }
+    boards~udict_set(4, idx, begin_cell().store_uint(result, 8).store_uint(units_count, 32).store_uint(stars, 32).end_cell().begin_parse());
+    return boards;
+}
+
+(cell, cell) end_game(cell players, cell unit_pool_by_level, cell users, int player_idx, cell positions) impure {
+    int owner_hash = players.udict_get_ref(8, player_idx).begin_parse().preload_uint(256);
+
+    var (paid_until, in_game, bans_counter, units) = get_user(owner_hash, users);
+    cell players_locations = positions.udict_get_ref(8, player_idx);
+    var (level_info, level, f1) = udict_get_min?(players_locations, 4);
+    while (f1) {
+        cell level_distribution = level_info.preload_dict();
+        int level_counter = 0;
+        var (coordinats, unit_idx_in_tuple, f2) = udict_get_min?(level_distribution, 16);
+        cell units_by_level = udict_get_ref(unit_pool_by_level, 8, level);
+
+        while (f2) {
+            (slice s_unit_idx, int f) = units_by_level~udict_delete_get?(16, unit_idx_in_tuple);
+            int unit_idx = s_unit_idx.preload_uint(16);
+            units = update_units_counter(units, unit_idx, level, 1);
+            level_counter += 1;
+            (unit_idx_in_tuple, coordinats, f2) = udict_get_next?(level_distribution, 16, unit_idx_in_tuple);
+        }
+        unit_pool_by_level~udict_set_ref(8, level, units_by_level);
+        unit_pool_by_level = update_units_counter(unit_pool_by_level, level, 0, -1 * level_counter);
+        (level, level_info, f1) = udict_get_next?(players_locations, 4, level);
+    }
+    users = create_user(owner_hash, users, now() + 100000, false, bans_counter, units);
+    return (unit_pool_by_level, users);
+}
+
+cell store_results(cell current_round, cell boards_info, cell new_players_states_info, int player_idx) impure {
+    cell board = udict_get_ref(current_round, 4, 3);
+    cell new_players_state = udict_get_ref(current_round, 4, 4);
+
+    var (board_info, board_idx, f2) = udict_get_min?(boards_info, 4);
+    var (new_players_state_info, player_idx, f2) = udict_get_min?(new_players_states_info, 4);
+    while (f2) {
+        var (result, units_count, stars) = (board_info~load_uint(4), board_info~load_uint(16), board_info.preload_uint(16));
+        board = update_board(board, result, units_count, stars, board_idx, true);
+        var (gold, level, exp, hp) = (new_players_state_info~load_uint(8), new_players_state_info~load_uint(8), new_players_state_info~load_uint(8), new_players_state_info.preload_uint(8));
+        
+        (new_players_state_info, int f) = udict_get?(new_players_state, 4, player_idx);
+
+        if (f) {
+            gold += new_players_state_info~load_uint(16);
+            level += new_players_state_info~load_uint(16);
+            exp += new_players_state_info~load_uint(16);
+            hp += new_players_state_info.preload_uint(16);
+        } 
+        new_players_state~udict_set(4, player_idx, begin_cell().store_uint(gold, 16).store_uint(level, 16).store_uint(exp, 16).store_uint(hp, 16).end_cell().begin_parse());            
+        
+        (board_idx, board_info, f2) = udict_get_next?(boards_info, 4, board_idx);
+        (player_idx, new_players_state_info, f2) = udict_get_next?(new_players_states_info, 4, player_idx);
+    }
+    current_round~udict_set_ref(4, 3, board);
+    current_round~udict_set_ref(4, 4, new_players_state);
+    return current_round;
+}
+
+(cell, cell, cell, cell, cell) end_round(cell unit_pool_by_level, cell players, cell current_round, cell users) impure {
+
+    int counter = get_players_count(players) - udict_get_ref(current_round, 4, 2).begin_parse().preload_uint(16);
+    cell board = udict_get_ref(current_round, 4, 3);
+
+    cell new_players = new_dict();
+    cell positions = udict_get_ref(current_round, 4, 1);
+    ;; results are adjusted here
+    cell new_players_state = udict_get_ref(current_round, 4, 4);
+    var (new_players_state_info, player_idx, f1) = udict_get_min?(new_players_state, 4);
+    while (f1) {
+        board = update_board(board, counter, counter, counter, player_idx, false);
+        var (player_hash, gold, user_level, exp, hp, unit_pool) = get_player(players, player_idx);
+        var (gold, user_level, exp, hp) = (new_players_state_info~load_uint(16) / counter, new_players_state_info~load_uint(16) / counter, new_players_state_info~load_uint(16) / counter, new_players_state_info.preload_uint(16) / counter);
+        if (hp) {
+            new_players = store_player(new_players, player_idx, player_hash, unit_pool, gold, user_level, exp, hp);
+            new_players = update_players_counter(new_players, 1, 8, 0);
+        } else {
+            (unit_pool_by_level, users) = end_game(players, unit_pool_by_level, users, player_idx, positions);
+        }
+        (player_idx, new_players_state_info, f1) = udict_get_next?(new_players_state, 4, player_idx);
+    }
+    current_round~udict_set_ref(4, 3, board);
+    cell last_round_results = current_round;
+    current_round = new_dict();
+    current_round~udict_set_ref(4, 0, begin_cell().store_uint(get_seed(), 256).end_cell());
+    return (unit_pool_by_level, new_players, current_round, last_round_results, users);
+
+}
+
+() try_end_round(int game_idx) impure {
+    var (users, matches, prices, ban_requests, stored_seqno, public_key) = load_data();
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    throw_if(64, should_start_round);
+    throw_if(66, timeout < now());
+    (unit_pool_by_level, players, current_round, last_round_results, users) = end_round(unit_pool_by_level, players, current_round, users);
+    games = create_game(games, game_idx, valid_unitl, true, unit_pool_by_level, players, current_round, last_round_results, timeout);
+    matches~udict_set_ref(2, 1, games);
+    return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
+}
+
+() send_round_results(slice owner_address, int player_idx, int game_idx, cell boards_info, cell new_players_states_info) impure {
+    var (users, matches, prices, ban_requests, stored_seqno, public_key) = load_data();
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    throw_if(64, should_start_round & (timeout < now())); ;; round should be started
+    var (player_hash, gold, user_level, exp, hp, unit_pool) = get_player(players, player_idx);
+    throw_unless(65, player_hash == slice_hash(owner_address));
+    current_round = store_results(current_round, boards_info, new_players_states_info, player_idx);
+    int players_count = get_players_count(players);
+    int players_in_game = udict_get_ref(current_round, 4, 2).begin_parse().preload_uint(16);
+    if (players_in_game == players_count) {
+        timeout = now() + 7200;
+    }
+    current_round = update_players_counter(current_round, -1, 4, 2);
+    if (players_in_game == 1) {
+        (unit_pool_by_level, players, current_round, last_round_results, users) = end_round(unit_pool_by_level, players, current_round, users);
+    }
+    games = create_game(games, game_idx, valid_unitl, players_in_game == 1, unit_pool_by_level, players, current_round, last_round_results, timeout);
+    matches~udict_set_ref(2, 1, games);
+    return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
+}
+
+cell start_round(cell games, int idx) impure {
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, idx);
+    throw_if(64, should_start_round);
+    last_round_results = current_round;
+    current_round = new_dict();
+    current_round~udict_set_ref(4, 0, begin_cell().store_uint(get_seed(), 256).end_cell());
+
+    games = create_game(games, idx, valid_unitl, should_start_round, unit_pool_by_level, players, current_round, last_round_results, timeout);
+    return games;
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 () line_up_to_match(slice owner_address, int valid_until, cell unit_pool, int msg_value) impure {
     ;; unit pool is [(counter) (type)](8)
     throw_if(54, msg_value < 1000); ;; fee
     throw_if(55, valid_until < now() + 30); ;; interval limit
-    throw_if(56, valid_until > now() + 7200); ;; interval limit
+    throw_if(56, valid_until > now() + 72000); ;; interval limit
     var (users, matches, prices, ban_requests, stored_seqno, public_key) = load_data();
-    var (paid_until, in_game, bans_counter, units) = get_user(owner_address, users);
+    int owner_hash = slice_hash(owner_address);
+    var (paid_until, in_game, bans_counter, units) = get_user(owner_hash, users);
     throw_if(57, in_game); ;; only one match is allowed simultaneously
-    var (unit_pool, level,  level_units, f) = udict_delete_get_min(unit_pool, 4);
-    int level_counter = 0;
+    cell queue = udict_get_ref(matches, 2, 0);
+    var (last_player, queue_length, f) = udict_get_max_ref(queue, 8);
+    if (f) {
+        queue_length += 1;
+    } else {
+        queue_length = 1;
+    }
+    queue = store_player(queue, queue_length, owner_hash, unit_pool, 1, 1, 0, 100);
+ 
+    matches~udict_set_ref(2, 0, queue);   
+    
+    cell unit_pool_by_level = udict_get_ref(matches, 2, 2);
+    var (unit_pool, level, level_units, f) = udict_delete_get_min(unit_pool, 4);
     while (f) {
+        int level_counter = 0;
         while (level_units.slice_bits()) {
             (int counter, int unit_id) = (level_units~load_uint(8), level_units~load_uint(16));
+            unit_pool_by_level = update_units_list(unit_pool_by_level, unit_id, level, counter);
             level_counter += counter;
-            units = update_units_counter(units, unit_id, level, counter, false);
-        }
+            units = update_units_counter(units, unit_id, level, -1 * counter);
 
+        }
         throw_unless(58, level_counter == 8); ;; exactly 8 units per level are allowed
+        unit_pool_by_level = update_units_counter(unit_pool_by_level, level, 0, level_counter);
         (unit_pool, level, level_units, f) = udict_delete_get_min(unit_pool, 4);
-        level_counter = 0;
     }
+
+    matches~udict_set_ref(2, 2, unit_pool_by_level);   
     ;; TODO: add level number check
-    var (matches, queue_length) = push_queue(matches, owner_address, valid_until, unit_pool);
-    if (queue_length == 7) {
-        matches = start_game(matches);
+    cell games = udict_get_ref(matches, 2, 1);
+    var (last_game, game_idx, f) = udict_get_max_ref(games, 8);
+    if(f) {
+        game_idx += 1;
+    } else {
+        game_idx = 1;
     }
-    users = create_user(owner_address, users, paid_until, true, bans_counter, units);
+    users = create_user(owner_hash, users, paid_until, game_idx, bans_counter, units);
+    if (queue_length == 2) {
+        queue = update_players_counter(queue, 8, 8, 0);
+        cell current_round = new_dict();
+        current_round~udict_set_ref(4, 0, begin_cell().store_uint(get_seed(), 256).end_cell());
+        games = create_game(games, game_idx, now() + 40000, true, unit_pool_by_level, queue, current_round, new_dict(), now() + 7200);
+        matches~udict_set_ref(2, 1, games);
+        (matches, int idx, cell queue, int f1) = udict_delete_get_min_ref(matches, 2);
+        (matches, int idx, cell unit_pool_by_level, int f1) = udict_delete_get_max_ref(matches, 2);
+    }
     return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
 }
+
+() complain(slice owner_address, int author_idx, int game_idx, int player_idx) impure {
+    var (users, matches, prices, ban_requests, stored_seqno, public_key) = load_data();
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    var (author_hash, gold, user_level, exp, hp, unit_pool) = get_player(players, author_idx);
+    throw_unless(67, author_hash == slice_hash(owner_address));
+    var (player_hash, gold, user_level, exp, hp, unit_pool) = get_player(players, player_idx);
+    var (paid_until, in_game, bans_counter, units) = get_user(player_hash, users);
+    cell game_bans = bans_counter.udict_get_ref(8, game_idx);
+    (slice ban, int f) = udict_get?(game_bans, 8, author_idx);
+    throw_if(68, f);
+    game_bans~udict_set(8, author_idx, begin_cell().store_uint(1, 1).end_cell().begin_parse());
+    bans_counter = update_units_counter(bans_counter, game_idx, 0, 1);
+    cell c_counter = udict_get_ref(bans_counter, 8, 0);
+    int counter = 0;
+    if (f) {
+        counter = c_counter.begin_parse().preload_uint(16);
+    }
+    counter += 1;
+    bans_counter~udict_set_ref(8, 0, begin_cell().store_uint(counter, 16).end_cell());
+    bans_counter~udict_set_ref(8, game_idx, game_bans);
+    users = create_user(player_hash, users, paid_until, in_game, bans_counter, units);
+
+    return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 () recv_external(slice in_msg) impure {
     slice signature = in_msg~load_bits(512);
@@ -260,7 +533,7 @@ cell start_game(cell matches) impure {
         return store_data(users, matches, prices, ban_requests, stored_seqno + 1, public_key);
     }
     if (op == 0xaa1122) {
-        cell new_prices = cs~load_dict();
+        cell new_prices = cs.preload_dict();
         return update_prices(new_prices);
     }
     return ();
@@ -282,12 +555,24 @@ cell start_game(cell matches) impure {
   }
   int query_id = in_msg~load_uint(64);
   if (op == 0xaaeeee) {
-    (int unit_id, int unit_level, int units_counter) = (in_msg~load_uint(16), in_msg~load_uint(8), in_msg~load_uint(16));
+    (int unit_id, int unit_level, int units_counter) = (in_msg~load_uint(16), in_msg~load_uint(8), in_msg.preload_uint(16));
     return buy_unit(s_addr, unit_id, unit_level, units_counter, msg_value);
   }
   if (op == 0xbbeeee) {
-    (int valid_until, cell unit_pool) = (in_msg~load_uint(32), in_msg~load_ref());
+    (int valid_until, cell unit_pool) = (in_msg~load_uint(32), in_msg.preload_ref());
     return line_up_to_match(s_addr, valid_until, unit_pool, msg_value);
+  }
+  if (op == 0xcceeee) {
+    (int player_idx, int game_idx, cell locations) = (in_msg~load_uint(8), in_msg~load_uint(8), in_msg.preload_dict());
+    return arrange_units(s_addr, player_idx, game_idx, locations);
+  }
+  if (op == 0xddeeee) {
+    (int player_idx, int game_idx, cell boards, cell new_players_state) = (in_msg~load_uint(8), in_msg~load_uint(8), in_msg~load_dict(), in_msg.preload_dict());
+    return send_round_results(s_addr, player_idx, game_idx, boards, new_players_state);
+  }
+  if (op == 0xeeeeee) {
+    int game_idx = in_msg~load_uint(8);
+    return try_end_round(game_idx);
   }
   return ();
 }
@@ -306,7 +591,6 @@ cell remove_expired(cell dict, int key_len) impure {
 
 (cell, cell) remove_from_queue(cell queue, cell users) impure {
     var new_queue = new_dict();
-    dump_stack();
     var (queue, idx, player, f) = udict_delete_get_min_ref(queue, 4);
     while (f) {
         var (valid_until, player_hash, unit_pool) = get_candidate(player);
@@ -316,11 +600,22 @@ cell remove_expired(cell dict, int key_len) impure {
             var (s_user, f) = users.udict_get?(256, player_hash);
             var (paid_until, in_game, bans_counter, units) = (0, 0, 0, new_dict());
             if (f) {
-                (paid_until, in_game, bans_counter, units) = (s_user~load_uint(32), s_user~load_int(1), s_user~load_uint(32), s_user.preload_dict());
+                (paid_until, in_game, bans_counter, units) = (s_user~load_uint(32), s_user~load_uint(8), s_user~load_uint(32), s_user.preload_dict());
             }
+
+            var (unit_pool, level, level_units, f) = udict_delete_get_min(unit_pool, 4);
+            while (f) {
+                int level_counter = 0;
+                while (level_units.slice_bits()) {
+                    (int counter, int unit_id) = (level_units~load_uint(8), level_units~load_uint(16));
+                    units = update_units_counter(units, unit_id, level, counter);
+                }
+                (unit_pool, level, level_units, f) = udict_delete_get_min(unit_pool, 4);
+            }
+
             slice user = begin_cell()
                 .store_uint(paid_until, 32)
-                .store_int(in_game, 1)
+                .store_int(false, 1)
                 .store_uint(bans_counter, 32)
                 .store_dict(units)
                 .end_cell()
@@ -362,7 +657,6 @@ cell remove_expired(cell dict, int key_len) impure {
     ifnot (users.null?()) {
         users = remove_expired(users, 256);
     }
-    dump_stack();
     return store_data(users, matches, prices, ban_requests, stored_seqno, public_key);
 }
 
@@ -378,9 +672,9 @@ cell remove_expired(cell dict, int key_len) impure {
         ds.preload_uint(256));
 }
 
-(int, int, int, cell) getuser(int wc, int addr) method_id {
+(int, int, cell, cell) getuser(int wc, int addr) method_id {
     cell users = get_data().begin_parse().preload_dict();
-    return get_user(begin_cell().store_uint(4, 3).store_int(wc, 8).store_uint(addr, 256).end_cell().begin_parse(), users);
+    return get_user(slice_hash(begin_cell().store_uint(4, 3).store_int(wc, 8).store_uint(addr, 256).end_cell().begin_parse()), users);
 }
 
 int getprice(int unit_id, int unit_level) method_id {
@@ -390,8 +684,8 @@ int getprice(int unit_id, int unit_level) method_id {
 }
 
 (int) getunits(int wc, int addr, int unit_id, int unit_level) method_id {
-    (int paid_until, int in_game, int bans_counter, cell units) = getuser(wc, addr);
-    return get_unit(units, unit_id, unit_level);
+    (int paid_until, int in_game, cell bans_counter, cell units) = getuser(wc, addr);
+    return get_unit_counter(units, unit_id, unit_level);
 }
 
 (int, int, int, cell, cell, cell,cell) getgame(int idx) method_id {
@@ -405,11 +699,185 @@ int getqueuelen() method_id {
     var ds = get_data().begin_parse();
     (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
     cell queue = udict_get_ref(matches, 2, 0);
-    var (last_player, idx, f) = udict_get_max_ref(queue, 4);
+    if (queue.null?()) {
+        return 0;
+    }
+    var (last_player, idx, f) = udict_get_max_ref(queue, 8);
     if (f) {
-        return idx + 1;
+        return idx;
     } else {
         return 0;
     }
 }
 
+int getplayeridx(int wc, int addr) method_id {
+    var ds = get_data().begin_parse();
+    (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
+    cell games = udict_get_ref(matches, 2, 1);
+    slice owner_address = begin_cell().store_uint(4, 3).store_int(wc, 8).store_uint(addr, 256).end_cell().begin_parse();
+    (int paid_until, int game_idx, cell bans_counter, cell units) = get_user(slice_hash(owner_address), users);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    int owner_hash = slice_hash(owner_address);
+    var idx = 0;
+    var f = 0;
+    while ( (f == 0) & (idx < 9) ) {
+        idx += 1;
+        cell player = players.udict_get_ref(8, idx);
+        ifnot (player.null?()) {
+            int player_hash = player.begin_parse().preload_uint(256);
+            if (player_hash == owner_hash) {
+                f = 1;
+            }
+        }            
+    }
+    if (f) {
+        return idx;
+    }
+    return -1;
+
+}
+
+cell getlocations(int game_idx, int player_idx) method_id {
+    var ds = get_data().begin_parse();
+    (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    cell positions = udict_get_ref(current_round, 4, 1);
+    return positions.udict_get_ref(8, player_idx);
+}
+
+int getlocalstoreseed(int game_idx) method_id {
+    var ds = get_data().begin_parse();
+    (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    cell seed_cell = udict_get_ref(current_round, 4, 0);
+    if (seed_cell.null?()) {
+        return -1;
+    }
+    return seed_cell.begin_parse().preload_uint(256);
+}
+
+
+tuple exchange(tuple list, idx_a, int idx_b) impure {
+    int tmp_value = tuple_get_index(list, idx_a);
+    list = tuple_set_index(list, tuple_get_index(list, idx_b), idx_a);
+    return tuple_set_index(list, tmp_value, idx_b);
+}
+
+tuple distribute_units_per_level(int units_per_level_count, int players_count) impure {
+    int units_per_player_count = units_per_level_count / players_count;
+    var units_distribution_per_level = nil;
+    int tuple_len = 0;
+    int player_idx = 0; 
+    while ((player_idx < players_count) & (tuple_len < units_per_level_count)) {
+        ifnot (tuple_len) {
+            units_distribution_per_level = single(player_idx + 1);
+        } else {
+            units_distribution_per_level = tuple_push(units_distribution_per_level, player_idx + 1);
+        }
+        player_idx += 1;
+        if (player_idx == players_count) {
+            player_idx = 0;
+        }
+        tuple_len += 1;
+    }
+    ;; shuffle
+    while (tuple_len) {
+        int r = rand(tuple_len);
+        tuple_len -= 1;
+        units_distribution_per_level = exchange(units_distribution_per_level, r, tuple_len);
+    }
+    return units_distribution_per_level;
+}
+
+cell tuple_to_cell(tuple list, int key_len, int list_len) impure {
+    cell list_cell = new_dict();
+    while(list_len) {
+        int el = 0;
+        (list, el) = tuple_pop(list);
+        list_len -= 1;
+        list_cell~udict_set_ref(8, list_len, begin_cell().store_uint(el, key_len).end_cell());
+    }
+    return list_cell;
+}
+
+cell create_store(cell unit_pool_by_level, cell players) impure {
+    int players_count = get_players_count(players);
+    cell level_distribution = new_dict();
+    cell units_counter_by_level = udict_get_ref(unit_pool_by_level, 8, 0);
+    var (units, level, f) = udict_get_min?(units_counter_by_level, 16);
+    while (f) {
+        int units_per_level_count = units.preload_uint(16);
+        var units_distribution_per_level = distribute_units_per_level(units_per_level_count, players_count);
+        cell units_distribution = tuple_to_cell(units_distribution_per_level, 4, units_per_level_count);
+        level_distribution~udict_set_ref(4, level, units_distribution);
+        (level, units, f) = udict_get_next?(units_counter_by_level, 16, level);
+    }
+    return level_distribution;
+}
+
+
+tuple getlocallevelstore(int game_idx, int level) method_id {
+    var ds = get_data().begin_parse();
+    (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    cell seed_cell = udict_get_ref(current_round, 4, 0);
+    if (seed_cell.null?()) {
+        return nil;
+    }
+    set_seed(seed_cell.begin_parse().preload_uint(256));
+    cell store = create_store(unit_pool_by_level, players);
+    return cell_to_tuple(udict_get_ref(store, 4, level), 8);
+}
+
+(cell, cell) gettemproundresults(int game_idx) method_id {
+    var ds = get_data().begin_parse();
+    (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    return (udict_get_ref(current_round, 4, 3), udict_get_ref(current_round, 4, 4));
+}
+
+(cell, cell) getfinalroundresults(int game_idx) method_id {
+    var ds = get_data().begin_parse();
+    (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    return (udict_get_ref(last_round_results, 4, 3), udict_get_ref(last_round_results, 4, 4));
+}
+
+int getplayerscount(int game_idx) method_id {
+    var ds = get_data().begin_parse();
+    (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    return get_players_count(players);
+}
+
+int getunitscount(int game_idx, int level) method_id {
+    var ds = get_data().begin_parse();
+    (cell users, cell matches) = (ds~load_dict(), ds.preload_dict());
+    cell games = udict_get_ref(matches, 2, 1);
+    var (valid_unitl, should_start_round, timeout, unit_pool_by_level, players, current_round, last_round_results) = get_game(games, game_idx);
+    cell units_counter_by_level = udict_get_ref(unit_pool_by_level, 8, 0);
+    (slice s_counter, int f) = units_counter_by_level.udict_get?(16, level);
+    if (f) {
+        return s_counter.preload_uint(16);
+    }    
+    return 0;
+}
+;; Global TODO:
+;; - add getter for player in round
+;; - get rid off level in players state
+;; - ban user for wrong positions
+;; - update fees calculations
+;; - send results when timeout
+;; - what if no results provided? 
+;; - fix last player end
+;; - fix distribution
+
+;; minor TODO:
+;; - add method to complain
+;; - add method to ban user

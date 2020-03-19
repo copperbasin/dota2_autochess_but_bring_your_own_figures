@@ -374,7 +374,26 @@ ton_wss.on "connection", (con)->
           switch : "get_match_id"
           result
         }
-        
+      
+      when "match_get"
+        # похуй на смарты, я нихуя не успеваю
+        seed = 1
+        con.write {
+          switch : "match_get"
+          result : {
+            id          : ""
+            seed        : seed
+            battle_seed : seed
+            match_player_list : [
+              {
+                "nickname" : "Player 1"
+              }
+              {
+                "nickname" : "Player 2"
+              }
+            ]
+          }
+        }
       
   return
 

@@ -35,4 +35,4 @@ module.exports =
             }
           td {
             class : "lvl_badge"
-          }, @props.level
+          }, @props.lvl

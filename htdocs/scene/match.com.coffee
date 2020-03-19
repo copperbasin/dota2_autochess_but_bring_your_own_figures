@@ -3,115 +3,217 @@ module.exports =
   state :
     waiting : true
     right_panel : "shop"
+    phase : "buy"
   
+  buy_state : null
   mount : ()->
     bg_change "img/battle_bg.jpg"
-    # EMULATION
-    @timeout_waiting = setTimeout ()=>
-      @set_state {waiting:false}
-    , 5000
-    # TEST only
-    @unit_list = []
-    x = 0
-    y = 0
-    for unit, idx in window.unit_list
-      # continue if idx % 12
-      continue if idx != 5
-      @unit_list.push {
-        x
-        y
-        type  : unit.type
-        class : unit.class
-        spec  : unit.spec
-      }
-      x++
-      if x >= 8
-        x = 0
-        y++
+    # @game = new Net_game ton.match_serialized
+    # DEBUG
+    localStorage.player_id = "0"
+    @game = new Net_game {
+      seed : 1
+      battle_seed : 1
+      match_player_list : [{
+        id : "0"
+        nickname : "nickname"
+      }]
+    }
+    @buy_state = @game.current_player.state
+    window.debug_game = @game
     
-    @force_update()
+    # # EMULATION
+    # @timeout_waiting = setTimeout ()=>
+    #   @set_state {waiting:false}
+    # , 5000
+    # # TEST only
+    # @unit_list = []
+    # x = 0
+    # y = 0
+    # for unit, idx in window.unit_list
+    #   # continue if idx % 12
+    #   continue if idx != 5
+    #   @unit_list.push {
+    #     x
+    #     y
+    #     type  : unit.type
+    #     class : unit.class
+    #     spec  : unit.spec
+    #   }
+    #   x++
+    #   if x >= 8
+    #     x = 0
+    #     y++
+    # 
+    # @force_update()
     return
   
   unmount : ()->
     clearTimeout @timeout_waiting
   
-  render : ()->
-    # shop_unit_list = clone(unit_list).map (t, idx)->
-      # t.roll_count  = idx % 3
-      # t.total_count = idx % 9
-      # return t
-    shop_unit_list = clone(unit_list).map (t, idx)->
-      t.bought  = idx >= 5
-      return t
-    player_list = [
-      {
-        hp    : 100
-        gold  : 10
-        unit_list : unit_list
-        level : 5
-      }
-    ]
-    
-    div {class: "center pad_top"}
-      if @state.waiting
-        div {class: "background_pad"}
-          div "Waiting for players"
-      
-      div {class: "background_pad"}
-        table {
-          class: "h_layout_table"
-          style:
-            width : "100%"
-        }
-          tbody
-            tr
-              td {
-                style :
-                  width : "45%"
-              }
-                Match_player_stats {
-                  hp    : 100
-                  gold  : 1
-                  gold  : 1
-                  exp   : 1
-                  level : 1
-                }
-                Chessboard_place {
-                  unit_list       : @unit_list
-                  unit_spare_list : []
-                }
-              td {
-                style :
-                  width : "55%"
-              }
-                Tab_bar {
-                  hash : {
-                    'shop'        : 'Shop'
-                    'leaderboard' : 'Leaderboard'
-                  }
-                  center : true
-                  value: @state.right_panel
-                  on_change : (right_panel)=>
-                    @set_state {right_panel}
-                }
-                div {
-                  style:
-                    height: 10
-                }
-                switch @state.right_panel
-                  when "shop"
-                    Unit_selector {
-                      shop_unit_list : shop_unit_list
-                      available_unit_list : @unit_list
-                    }
-                  when "leaderboard"
-                    Leaderboard {
-                      player_list : player_list
-                    }
-                # Unit_shop_ingame {
-                  # shop_unit_list : shop_unit_list
-                  # available_unit_list : @unit_list
-                  # player_level : 3
-                  # player_gold  : 1
-                # }
+  commit : ()->
+    @game.player_commit_server()
+    @set_state {
+      phase : "commit_wait"
+    }
   
+  battle_show_finish : ()->
+    setTimeout ()=>
+      @restart()
+      @game.phase_new_round()
+      if @game.active_player_list.length <= 1 or !@game.active_player_list.has @game.current_player
+        @end_game()
+      else
+        @set_state battle_finish: true
+    , 5000
+  
+  battle_force_finish : ()->
+    @restart()
+    @game.phase_new_round()
+    if @game.active_player_list.length <= 1 or !@game.active_player_list.has @game.current_player
+      @end_game()
+    else
+      @set_state phase: "buy"
+    return
+  
+  end_game : ()->
+    puts "end_game"
+    # if ton.last_match_serialized
+    #   @game = new Net_game ton.last_match_serialized
+    # @set_state phase: "end_of_game"
+    # ton.unit_count_request()
+  
+  render : ()->
+    player_list = @game.player_list.clone()
+    player_list.sort (a,b)->-(a.state.final_state.hp - b.state.final_state.hp)
+    div {class: "center pad_top"}
+      div {class: "background_pad"}
+        # div {
+        #   style:
+        #     textAlign:"left"
+        #     position: "abosolute"
+        # }
+        #   Back_button {
+        #     on_click : ()=>
+        #       router_set "main"
+        #   }
+        switch @state.phase
+          when "buy"
+            div {class:"battle_caption"}, "Phase: #{@state.phase}"
+            Match_player_stats @buy_state.final_state
+            Board_buy {
+              state : @buy_state
+              leaderboard_player_list : player_list
+              on_change : ()=>
+                @force_update()
+            }
+            Start_button {
+              label : "Ready"
+              on_click : ()=>
+                @commit()
+            }
+            # if ton.commit_ts_left
+              # Countdown {
+                # ts      : ton.commit_ts_left
+                # start_ts: ton.commit_ts_left_set_ts
+              # }
+          when "commit_wait"
+            div {class:"battle_caption"}, "Phase: Wait for other players"
+            table
+              tbody
+                tr
+                  td
+                    Board_buy {
+                      state   : @buy_state
+                      readonly: true
+                    }
+                  td {
+                    style:
+                      verticalAlign:"top"
+                  }
+                    table {class:"table"}
+                      tbody
+                        tr
+                          th "Nickname"
+                          th "HP"
+                          th "Gold"
+                          th "Ready"
+                        for player in player_list
+                          tr
+                            td player.nickname
+                            td player.state.final_state.hp
+                            td player.state.final_state.gold
+                            td 
+                              if player.is_commit_done
+                                img {
+                                    class : "s_icon"
+                                    src : "img/yes.png"
+                                  }
+                              else
+                                img {
+                                  class : "s_icon"
+                                  src : "img/no.png"
+                                }
+                    # Countdown {
+                      # ts      : ton.commit_ts_left
+                      # start_ts: ton.commit_ts_left_set_ts
+                    # }
+          when "battle_calc"
+            div {class:"battle_caption"}, "Phase: Calculating battle result"
+            Board_buy {
+              state   : @buy_state
+              readonly: true
+            }
+          when "consensus_wait"
+            div {class:"battle_caption"}, "Phase: Wait for consensus"
+            Board_buy {
+              state   : @buy_state
+              readonly: true
+            }
+          
+          when "battle"
+            div {class:"battle_caption"}, "Phase: Show battle"
+            Match_player_stats @buy_state.final_state
+            Board_battle {
+              start_state:@battle_start_state
+              on_finish : (result, battle_final_state)=>
+                @battle_show_finish()
+            }
+            Start_button {
+              label : "End battle"
+              # disabled : !@s  tate.battle_finish
+              on_click : ()=>
+                @battle_force_finish()
+            }
+            # if ton.commit_ts_left
+              # Countdown {
+                # ts      : ton.commit_ts_left
+                # start_ts: ton.commit_ts_left_set_ts
+              # }
+          when "end_of_game"
+            div {class:"battle_caption"}, "End of game"
+            table {class:"table"}
+              tbody
+                tr
+                  td "Player name"
+                  td "HP left"
+                  td "Gold left"
+                  td "Reward"
+                  # TODO units left
+                for player in player_list
+                  tr
+                    td player.nickname
+                    td player.state.final_state.hp
+                    td player.state.final_state.gold
+                    td
+                      if player.last_game_reward
+                        for figure_name in player.last_game_reward
+                          [unit_id, level] = figure_name.split("_")
+                          unit = unit_id_hash[unit_id]
+                          Unit_icon_render {unit, s:true}
+                          span unit
+            Start_button {
+              label : "End game"
+              on_click : ()=>
+                router_set "main"
+            }

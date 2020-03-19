@@ -3,13 +3,14 @@
 "Asm.fif" include
 
 106679 constant getlocallevelstore
-3 :$1..n
-$1 "1" replace-if-null parse-int =: game_idx
 
-"build/new-game" constant file-base
+true constant bounce
+3 :$1..n
+$1 bounce parse-load-address =: bounce 2=: dest_addr
+$2 "1" replace-if-null parse-int =: game_idx
+
 "build/contract.boc" file>B B>boc constant updated_storage
 "build/game-code.fif" include <s constant code
-file-base +".addr" load-address 2constant dest_addr
 
 0 tuple 0x076ef1ea ,
 0 , 0 , 

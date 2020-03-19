@@ -16,14 +16,15 @@ module.exports =
             style:
               width: 100
           }, "Gold"
-          th "Fig cost"
-        for player, idx in @props.player_list
+          # th "Fig cost"
+        for player_, idx in @props.player_list
+          player = player_.state.final_state
           tr
             td idx+1
             td
               div {
                 class : "lvl_badge center_pad"
-              }, player.level
+              }, player.lvl
             td
               Leaderboard_bar {
                 value : player.hp
@@ -36,4 +37,4 @@ module.exports =
                 max   : 100
                 color : "#FE0"
               }
-            td player.unit_list.map((t)->t.level).reduce (a, b)->a+b
+            # td player.unit_list.map((t)->t.level).reduce (a, b)->a+b
