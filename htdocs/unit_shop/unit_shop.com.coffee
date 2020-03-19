@@ -50,7 +50,10 @@ module.exports =
     ton.off "count_update", @listener_count
   
   buy : ()->
-    @set_state {buy_in_progress: true}
+    @set_state {
+      buy_in_progress: true
+      buy_status : ""
+    }
     old_owned_hash = clone ton.owned_hash
     await call_later defer()
     

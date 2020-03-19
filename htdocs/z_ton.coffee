@@ -23,6 +23,7 @@ class TON_account
     @unit_battle_hash= {}
     @unit_price_request()
     @unit_count_request()
+    @get_match_id_request()
     
     setInterval ()=>
       @get_queue_len_request()
@@ -33,7 +34,7 @@ class TON_account
     try
       @unit_battle_hash = JSON.parse localStorage.unit_battle_hash
     catch err
-      p "no storage for unit_battle_hash"
+      puts "no storage for unit_battle_hash"
     
   
   save : ()->
@@ -126,6 +127,11 @@ class TON_account
     ws_ton.write {
       switch    : "get_queue_len"
     }
+  
+  get_match_id_request : ()->
+    ws_ton.write {
+      switch    : "get_match_id"
+    }
 
 window.ton = new TON_account
 window.ws_ton.on "data", (data)->
@@ -165,4 +171,8 @@ window.ws_ton.on "data", (data)->
         ton.queue_len = data.result
         ton.dispatch "queue_len_update"
     
+    when "get_match_id"
+      ton.match_id = data.result
+      if ton.match_id
+        router_set "match"
   return

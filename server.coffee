@@ -45,13 +45,17 @@ delivery.start {
 #    TON stuff
 # ###################################################################################################
 # TODO Когда я узнаю, что у lite-client'а есть RPC, то я это всё перепишу по-нормальному
-{contract_addr} = require("./config.json")
+{
+  contract_addr
+  delay_between_submit
+} = require("./config.json")
 
 my_wallet     = ""
 my_wallet2    = ""
 my_work_chain = ""
 my_balance    = 0
 
+delay_lock = new Lock_mixin
 lock = new Lock_mixin
 lock.$limit = argv.multi_exec_max_threads or 10
 multi_exec = (opt)->
@@ -166,13 +170,22 @@ line_up = ()->
     # TODO 0.5 G HARDCODE
     easy_exec([
       "fift -s fift_scripts/line-up-queue.fif"
-      "fift -s fift_scripts/wallet.fif 'build/new-wallet' #{contract_addr} #{seqno} 0.5 './build/wallet-query' -B './build/line-up.boc'"
+      "fift -s fift_scripts/wallet.fif 'build/new-wallet' #{contract_addr} #{seqno} 4.5 './build/wallet-query' -B './build/line-up.boc'"
       "lite-client -c 'sendfile ./build/wallet-query.boc'"
     ].join " && ")
     return true
   catch err
     perr err
   false
+
+get_match_id = ()->
+  try
+    # TODO 0.5 G HARDCODE
+    cmd = "lite-client -v 0 -c 'runmethod #{contract_addr} getplayeridx -1 0x#{my_wallet2}' 2>&1 |  grep result: | cut -d '[' -f2 | cut -d ']' -f1"
+    return easy_exec cmd
+  catch err
+    perr err
+  ""
   
 # ###################################################################################################
 #    TON ws
@@ -309,11 +322,14 @@ ton_wss.on "connection", (con)->
         return perr "!data.id"    if !data.id
         return perr "!data.level" if !data.level
         return perr "!data.count" if !data.count
+        await delay_lock.lock defer()
         result = buy_unit data.id, data.level, data.count
+        await setTimeout defer(), delay_between_submit
         con.write {
           uid : data.uid
           result
         }
+        delay_lock.unlock()
       # ###################################################################################################
       #    matchmaking
       # ###################################################################################################
@@ -325,31 +341,40 @@ ton_wss.on "connection", (con)->
         }
       
       when "line_up"
-        # Там у Насти баг, потому посылаем от фонаря
-        # return perr "!unit.unit_list" if !data.unit_list
-        # # **** же костыль
-        # list = []
-        # list.push """
-        # // add your units for match in form:
-        # //
-        # // UNIT_ID CONTER create-units-per-level
-        # // LEVEL add-units-per-level
-        # """
-        # for unit in data.unit_list
-        #   return perr "!unit.id"    if !unit.id
-        #   return perr "!unit.count" if !unit.count
-        #   return perr "!unit.level" if !unit.level
-        #   
-        #   list.push """
-        #   #{unit.id} #{unit.count} create-units-per-level
-        #   #{unit.level} add-units-per-level
-        #   """
-        # fs.writeFileSync "fift_scripts/units-source.fif", list.join "\n\n"
+        return perr "!unit.unit_list" if !data.unit_list
+        list = []
+        list.push """
+        // add your units for match in form:
+        //
+        // UNIT_ID CONTER create-units-per-level
+        // LEVEL add-units-per-level
+        """
+        for level in [1 .. 5]
+          for unit in data.unit_list
+            return perr "!unit.id"    if !unit.id
+            return perr "!unit.count" if !unit.count
+            return perr "!unit.level" if !unit.level
+            continue if unit.level != level
+            
+            list.push """
+            <b b> <s
+            #{unit.id} #{unit.count} create-units-per-level
+            #{unit.level} add-units-per-level
+            """
+        fs.writeFileSync "fift_scripts/units-source.fif", list.join "\n\n"
         result = line_up()
         con.write {
           switch : "line_up"
           result
         }
+      
+      when "get_match_id"
+        result = get_match_id()
+        con.write {
+          switch : "get_match_id"
+          result
+        }
+        
       
   return
 
@@ -358,7 +383,9 @@ ton_wss.write = (msg)->
     con.write msg
   return
 
+
 do ()->
+  await setTimeout defer(), 100
   loop
     easy_exec "lite-client -c 'last' 2>&1"
     await setTimeout defer(), 1000
