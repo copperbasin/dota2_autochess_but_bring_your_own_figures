@@ -1,0 +1,255 @@
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+.tab button {
+  background-color: inherit;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 2px 16px;
+  transition: 0.3s;
+}
+
+.tab button:hover {
+  background-color: #ddd;
+}
+
+.tab button.active {
+  background-color: #ccc;
+}
+.table {
+  border: 1px solid #a2a9b1;
+  background-color: #f8f9fa;
+  border-collapse:collapse;
+}
+.table tr {
+  border: 1px solid #a2a9b1;
+  padding: 0.2em 0.4em;
+}
+.table th {
+  border: 1px solid #a2a9b1;
+  padding: 0.2em 0.4em;
+  background-color: #eaecf0;
+}
+.table td {
+  border: 1px solid #a2a9b1;
+  padding: 0.2em 0.4em;
+}
+th.sort {
+    background-image: url(/table/sort_both.png);
+    background-image: linear-gradient(transparent,transparent),url(data:image/svg+xml,<%3Fxml%20version%3D"1.0"%20encoding%3D"UTF-8"%3F>%0A<svg%20xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg"%20viewBox%3D"0%200%2021%209"%20height%3D"9"%20width%3D"21">%0A%20%20%20%20<path%20d%3D"M14.5%205l-4%204-4-4zM14.5%204l-4-4-4%204z"%2F>%0A<%2Fsvg>%0A);
+    background-image: -o-linear-gradient(transparent,transparent),url(/table/sort_both.png);
+    cursor: pointer;
+    background-repeat: no-repeat;
+    background-position: center right;
+    padding-right: 21px;
+    user-select : none;
+}
+
+th.asc {
+    background-image: url(/table/sort_up.png);
+    background-image: linear-gradient(transparent,transparent),url(data:image/svg+xml,<%3Fxml%20version%3D"1.0"%20encoding%3D"UTF-8"%3F>%0A<svg%20xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg"%20viewBox%3D"0%200%2021%204"%20height%3D"4"%20width%3D"21">%0A%20%20%20%20<path%20d%3D"M6.5%204l4-4%204%204z"%2F>%0A<%2Fsvg>%0A);
+    background-image: -o-linear-gradient(transparent,transparent),url(/table/sort_up.png);
+}
+th.desc {
+    background-image: url(/table/sort_down.png);
+    background-image: linear-gradient(transparent,transparent),url(data:image/svg+xml,<%3Fxml%20version%3D"1.0"%20encoding%3D"UTF-8"%3F>%0A<svg%20xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg"%20viewBox%3D"0%200%2021%204"%20height%3D"4"%20width%3D"21">%0A%20%20%20%20<path%20d%3D"M14.5%200l-4%204-4-4z"%2F>%0A<%2Fsvg>%0A);
+    background-image: -o-linear-gradient(transparent,transparent),url(/table/sort_down.png);
+}.start_button {
+  width : 200px;
+  height: 50px;
+  font-size: 26px;
+  background-color: #ff1;
+  color: #111;
+  font-family: HypatiaSansPro-Semibold;
+  border: 5px #555 solid;
+  border-radius: 3px;
+  transition: 0.3s;
+}
+
+.start_button:hover {
+  border: 5px #111 solid;
+  background-color: #FFFF60;
+  color: #000;
+}
+
+button:disabled, button[disabled], button:disabled:hover, button[disabled]:hover {
+  background-color: #999;
+  border: 0;
+}
+
+.nav_button {
+  background-color: #ff1;
+  font-size: 26px;
+  font-family: HypatiaSansPro-Semibold;
+}
+
+.back_button {
+  position: absolute; /* HACK */
+  width   : 50px;
+  height  : 50px;
+  opacity : 0.5;
+  transition: 0.3s;
+}
+.back_button:hover {
+  opacity : 0.9;
+}.progress {
+  width : 100%;
+  height: 25px;
+  background: #ccc;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.progress_label {
+  font-size: 20px;
+  width: 100%;
+  position: relative;
+  top: -23px;
+}
+
+.progress_fill {
+  height: 25px;
+  border-radius: 3px;
+}
+.lvl_badge {
+  border: 2px solid #aaa;
+  width: 27px;
+  heigth: 27px;
+  border-radius: 15px;
+  font-size: 18px;
+  padding-top: 4px;
+  color: #FE0;
+  font-weight: bold;
+  background: #333;
+}.main_menu_item {
+  padding-bottom:10px;
+}
+
+.battle_caption {
+  height: 50px;
+}
+.shop_table {
+  font-size: 16px;
+}
+
+.shop_table .check_pass {
+  background: #ff0;
+}
+
+.shop_table .check_cant_afford {
+  background: #ccc;
+}
+
+.scroll_container {
+  overflow: auto;
+}
+
+.shop_table input[type=number] {
+  padding-top: 2px;
+  margin-top: -2px;
+  height: 20px;
+}
+
+.s_icon {
+  width: 20px;
+  height: 20px;
+  margin-bottom: -5px;
+}
+
+.shop_filter_title {
+  text-align: left;
+  width:50px;
+}
+body, html {
+  height: 100%;
+  margin: 0;
+  overflow:hidden;
+  font-family: HypatiaSansPro-Regular;
+}
+
+#wrap {
+  height: 100%;
+}
+
+#bg1, #bg2 {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  -webkit-transition: opacity 2s ease-in-out;
+  transition: opacity 2s ease-in-out;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  z-index: -1;
+}
+
+.reset_font {
+  font-size: 16px;
+}
+
+.center {
+  text-align: center;
+}
+
+.center_pad {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pad_top {
+  padding-top: 10px;
+}
+
+.background_pad {
+  margin-left : auto;
+  margin-right: auto;
+  padding: 20px;
+  width : 1100px;
+  border-radius: 2px;
+  background: #eee;
+  font-family: HypatiaSansPro-Regular;
+  font-size: 26px;
+}
+
+.h_layout_table > tbody > tr > td {
+  vertical-align: top;
+}
+
+@font-face {
+  font-family: HypatiaSansPro-Regular;
+  src: url("font/HypatiaSansPro-Regular.otf") format("opentype");
+}
+
+@font-face {
+  font-family: HypatiaSansPro-Semibold;
+  src: url("font/HypatiaSansPro-Semibold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: HypatiaSansPro-Bold;
+  src: url("font/HypatiaSansPro-Bold.otf") format("opentype");
+}
+
+/* RE-style not default components */
+.tab button {
+  height: 40px;
+}
+input[type=number] {
+  font-family: HypatiaSansPro-Regular;
+  font-size: 16px;
+  width : 45px;
+  border: 1px solid #eee;
+  padding-left: 4px;
+}
+/* no selection double click https://stackoverflow.com/questions/880512/prevent-text-selection-after-double-click */
+canvas {
+  user-select: none; /* standard syntax */
+  -webkit-user-select: none; /* webkit (safari, chrome) browsers */
+  -moz-user-select: none; /* mozilla browsers */
+  -khtml-user-select: none; /* webkit (konqueror) browsers */
+  -ms-user-select: none; /* IE10+ */
+}

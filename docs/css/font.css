@@ -1,0 +1,26 @@
+@font-face {
+  font-family: HypatiaSansPro-Regular;
+  src: url("../fonts/HypatiaSansPro-Regular.otf") format("opentype");
+}
+
+@font-face {
+  font-family: HypatiaSansPro-Semibold;
+  src: url("../fonts/HypatiaSansPro-Semibold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: HypatiaSansPro-Bold;
+  src: url("../fonts/HypatiaSansPro-Bold.otf") format("opentype");
+}
+
+body {
+	font-family: HypatiaSansPro-Regular;
+}
+
+header .navbar {
+	font-family: HypatiaSansPro-Bold;
+}
+
+h1, h2, h3, h4, h5 {
+	font-family: HypatiaSansPro-Semibold;
+}
