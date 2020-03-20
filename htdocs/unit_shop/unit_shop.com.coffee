@@ -69,7 +69,7 @@ module.exports =
     
     await setTimeout defer(), 1000
     successful = false
-    for retry in [0 ... 30]
+    for retry in [0 ... 60]
       # debugger
       ton.unit_count_request id_list
       await setTimeout defer(), 1000

@@ -4,6 +4,7 @@ window.shop_init = (state, todo_player_id, todo_unit_pool_list)->
     cell = new Shop_unit
     cell.id   = i
     cell.type = unit_list[i].type
+    cell.type_id = unit_list[i].id
     cell.lvl  = unit_list[i].level
     shop_unit_list.push cell
   

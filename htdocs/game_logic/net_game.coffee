@@ -28,12 +28,8 @@ class window.Net_game
     # ###################################################################################################
     #    unit_pool_list
     # ###################################################################################################
-    for net_player in match_serialized.match_player_list
-      for figure_name, count of net_player.figure_hash
-        [figure_id] = figure_name.split "_"
-        for i in [0 ... count]
-          # TODO make unit.uid for remove from unit_pool_list units that are on boards (and after sell place them back to unit_pool_list, !!!NOTE merge!!)
-          @unit_pool_list.push unit_id_hash[figure_id]
+    for figure_id in match_serialized.shop_unit_list
+      @unit_pool_list.push unit_id_hash[figure_id]
     
     # ###################################################################################################
     #    player_list
@@ -108,6 +104,7 @@ class window.Net_game
       cell.id   = player.state.start_state.shop_unit_list.length
       # TODO pass unit.uid
       cell.type = unit.type
+      cell.type_id = unit.id
       cell.lvl  = unit.level
       player.state.start_state.shop_unit_list.push cell
     

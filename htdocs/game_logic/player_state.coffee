@@ -15,6 +15,7 @@ window.exp2lvl = (exp)->
 class window.Shop_unit
   id        : 0 # REDUNDANT
   type      : ""
+  type_id   : -1
   lvl       : 0
   is_bought : false
   is_hover  : false
@@ -23,6 +24,7 @@ class window.Shop_unit
     ret = new Shop_unit
     ret.id        = @id        
     ret.type      = @type      
+    ret.type_id   = @type_id   
     ret.lvl       = @lvl       
     ret.is_bought = @is_bought 
     ret.is_hover  = @is_hover  
@@ -31,6 +33,7 @@ class window.Shop_unit
 class window.Game_unit
   id        : 0
   type      : ""
+  type_id   : -1
   x         : 0
   y         : 0
   lvl       : 0
@@ -43,6 +46,7 @@ class window.Game_unit
     ret = new Game_unit
     ret.id        = @id        
     ret.type      = @type      
+    ret.type_id   = @type_id   
     ret.x         = @x         
     ret.y         = @y         
     ret.lvl       = @lvl       
@@ -53,6 +57,7 @@ class window.Game_unit
     ret = {}
     ret.id        = @id        
     ret.type      = @type      
+    ret.type_id   = @type_id   
     ret.x         = @x         
     ret.y         = @y         
     ret.lvl       = @lvl       
@@ -62,6 +67,7 @@ class window.Game_unit
   deserialize_obj : (obj)->
     @id        = obj.id        
     @type      = obj.type      
+    @type_id   = obj.type_id   
     @x         = obj.x         
     @y         = obj.y         
     @lvl       = obj.lvl       
@@ -71,6 +77,7 @@ class window.Game_unit
   cmp : (t)->
     return false if @id        != t.id        
     return false if @type      != t.type      
+    return false if @type_id   != t.type_id   
     return false if @x         != t.x         
     return false if @y         != t.y         
     return false if @lvl       != t.lvl       
@@ -228,6 +235,7 @@ class @window.Player_cross_round_state
         unit.x    = x
         unit.y    = y
         unit.type = shop_unit.type
+        unit.type_id = shop_unit.id
         unit.lvl  = shop_unit.lvl
         @board_unit_hash[unit.id] = unit
         @board_place_mx[x][y] = unit

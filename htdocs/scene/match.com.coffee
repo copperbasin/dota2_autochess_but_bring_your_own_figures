@@ -6,50 +6,39 @@ module.exports =
     phase : "buy"
   
   buy_state : null
+  match_update_handler : null
   mount : ()->
     bg_change "img/battle_bg.jpg"
-    # @game = new Net_game ton.match_serialized
-    # DEBUG
-    localStorage.player_id = "0"
-    @game = new Net_game {
-      seed : 1
-      battle_seed : 1
-      match_player_list : [{
-        id : "0"
-        nickname : "nickname"
-      }]
-    }
-    @buy_state = @game.current_player.state
-    window.debug_game = @game
     
-    # # EMULATION
-    # @timeout_waiting = setTimeout ()=>
-    #   @set_state {waiting:false}
-    # , 5000
-    # # TEST only
-    # @unit_list = []
-    # x = 0
-    # y = 0
-    # for unit, idx in window.unit_list
-    #   # continue if idx % 12
-    #   continue if idx != 5
-    #   @unit_list.push {
-    #     x
-    #     y
-    #     type  : unit.type
-    #     class : unit.class
-    #     spec  : unit.spec
-    #   }
-    #   x++
-    #   if x >= 8
-    #     x = 0
-    #     y++
-    # 
-    # @force_update()
+    if !ton.match_serialized
+      ton.get_match_request()
+      @game = new Net_game {
+        seed        : 1
+        battle_seed : 1
+        shop_unit_list : []
+        match_player_list : [{
+          id : localStorage.player_id
+          nickname : "nickname"
+        }]
+      }
+      @buy_state = @game.current_player.state
+      window.debug_game = @game
+    else
+      @sync()
+    
+    ton.on "match_get", @match_update_handler = ()=>
+      @sync()
+    
     return
+  
+  sync : ()->
+    @game = new Net_game ton.match_serialized
+    @buy_state = @game.current_player.state
+    @force_update()
   
   unmount : ()->
     clearTimeout @timeout_waiting
+    ton.off "match_get", @match_update_handler
   
   commit : ()->
     @game.player_commit_server()

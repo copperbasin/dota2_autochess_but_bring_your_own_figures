@@ -15,6 +15,7 @@ class TON_account
   unit_price_hash : {} # id -> id level price
   unit_battle_hash: {} # id -> count
   queue_len       : 1
+  match_serialized: null
   
   event_mixin @
   constructor:()->
@@ -130,7 +131,12 @@ class TON_account
   
   get_match_id_request : ()->
     ws_ton.write {
-      switch    : "get_match_id"
+      switch    : "get_player_in_match_id"
+    }
+  
+  get_match_request : ()->
+    ws_ton.write {
+      switch    : "match_get"
     }
 
 window.ton = new TON_account
@@ -171,8 +177,13 @@ window.ws_ton.on "data", (data)->
         ton.queue_len = data.result
         ton.dispatch "queue_len_update"
     
-    when "get_match_id"
-      ton.match_id = data.result
-      if ton.match_id
+    when "get_player_in_match_id"
+      return if localStorage.queue_debug
+      if data.result and data.result != "-1"
+        localStorage.player_id = data.result
         router_set "match"
+    
+    when "match_get"
+      ton.match_serialized = data.result
+      ton.dispatch "match_get"
   return

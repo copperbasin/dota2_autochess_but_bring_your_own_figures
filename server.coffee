@@ -178,7 +178,19 @@ line_up = ()->
     perr err
   false
 
+# game_idx=`./lite-client/lite-client -v 0 -C ./lite-client/ton-global.config -c 'runmethod '$CONTRACT' getuser -1 0x'$user
 get_match_id = ()->
+  try
+    # TODO 0.5 G HARDCODE
+    res = easy_exec "lite-client -v 0 -c 'runmethod #{contract_addr} getuser -1 0x#{my_wallet2}' 2>&1 |  grep result:"
+    res = res.replace("result:", "").replace(/[\[\]]/g, "").trim()
+    match_id = res.split(/\s/g)[1]
+    return match_id
+  catch err
+    perr err
+  ""
+
+get_player_in_match_id = ()->
   try
     # TODO 0.5 G HARDCODE
     cmd = "lite-client -v 0 -c 'runmethod #{contract_addr} getplayeridx -1 0x#{my_wallet2}' 2>&1 |  grep result: | cut -d '[' -f2 | cut -d ']' -f1"
@@ -186,6 +198,45 @@ get_match_id = ()->
   catch err
     perr err
   ""
+
+get_match_seed = (match_id)->
+  try
+    res = easy_exec("lite-client -c 'runmethod #{contract_addr} getlocalstoreseed #{match_id}' 2>&1 | grep result:")
+    res = res.replace("result:", "").replace(/[\[\]]/g, "").trim()
+    # (2**32).toString().length = 10
+    return +(res.substr 0, 9)
+  catch err
+    perr err
+  1
+
+get_match_shop_unit_list = (match_id)->
+  try
+    # TODO 0.5 G HARDCODE
+    data = easy_exec ([
+      "lite-client -l /dev/null -c 'saveaccountdata ./build/contract.boc #{contract_addr}'"
+      "fift -s fift_scripts/get-units-list.fif #{contract_addr} #{match_id} 2>/dev/null"
+    ].join " && ")
+    data = data.replace /[\[\]]/g, ""
+    data = data.trim()
+    data = data.replace /\s{1,}/g, ","
+    return data.split(",").map (t)->+t
+  catch err
+    perr err
+  []
+
+submit_position = ()->
+  seqno = get_seqno()
+  try
+    # TODO 0.5 G HARDCODE
+    easy_exec([
+      "fift -s fift_scripts/arrange-units.fif './fift_scripts/locations-source.fif'"
+      "fift -s fift_scripts/wallet.fif 'build/new-wallet' #{contract_addr} #{seqno} 0.5 './build/wallet-query' -B './build/arrange-units.boc'"
+      "lite-client -c 'sendfile ./build/wallet-query.boc'"
+    ].join " && ")
+    return true
+  catch err
+    perr err
+  false
   
 # ###################################################################################################
 #    TON ws
@@ -368,33 +419,83 @@ ton_wss.on "connection", (con)->
           result
         }
       
-      when "get_match_id"
-        result = get_match_id()
+      when "get_player_in_match_id"
+        result = get_player_in_match_id()
         con.write {
-          switch : "get_match_id"
+          switch : "get_player_in_match_id"
           result
         }
       
       when "match_get"
-        # похуй на смарты, я нихуя не успеваю
-        seed = 1
+        match_id = get_match_id()
+        player_id = get_player_in_match_id match_id
+        shop_unit_list = get_match_shop_unit_list match_id
+        seed = get_match_seed match_id
         con.write {
           switch : "match_get"
           result : {
-            id          : ""
+            player_id
             seed        : seed
             battle_seed : seed
+            shop_unit_list
             match_player_list : [
               {
+                "id" : "1"
                 "nickname" : "Player 1"
               }
               {
+                "id" : "2"
                 "nickname" : "Player 2"
               }
             ]
           }
         }
       
+      when "submit_position"
+        # data.action_list
+        # data.final_state
+        try
+          final_state = JSON.parse data.final_state
+        catch err
+          return perr err
+        
+        # ignore...
+        # final_state.hp
+        # final_state.gold
+        # final_state.exp
+        match_id = get_match_id()
+        player_id = get_player_in_match_id match_id
+        
+        list = []
+        list.push """
+          #{player_id} player_idx !
+          #{match_id} game_idx !
+        """
+        for id,unit of final_state.board_unit_hash
+          list.push """
+          dictnew locations !
+          dictnew locations_per_level !
+          #{unit.y} #{unit.x} create-location-per-level
+          #{unit.type_id} add-location-per-level
+          create-location #{unit.lvl} add-location
+          """
+        
+        list.push ""
+        
+        fs.writeFileSync "fift_scripts/locations-source.fif", list.join "\n\n"
+        
+        if submit_position()
+          con.write {
+            switch : "submit_position"
+            result : "ok"
+          }
+        else
+          con.write {
+            switch : "submit_position"
+            error  : "see logs"
+          }
+    
+    return
   return
 
 ton_wss.write = (msg)->

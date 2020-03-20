@@ -9,6 +9,14 @@ module.exports =
     @controller.on_board_change_fn = @props.on_board_change
     return
   
+  componentWillUpdate : (next_props, next_state)->
+    @controller.on_change = next_props.on_change
+    @controller.on_board_change_fn = next_props.on_board_change
+    if @props.state != next_props.state
+      @controller.state = next_props.state
+      @controller.refresh()
+    return
+  
   render : ()->
     @controller.props_update @props
     div {

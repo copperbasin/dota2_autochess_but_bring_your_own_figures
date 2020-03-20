@@ -11,8 +11,8 @@ str = """
 ;warlock
 """
 window.class_list = str.split("\n").map (str)->
-  [display_name, name] = str.split(';').map((t)->t.trim())
-  display_name = display_name or name.replace(/_/g, ' ').capitalize()
+  [display_name, name] = str.split(";").map((t)->t.trim())
+  display_name = display_name or name.replace(/_/g, " ").capitalize()
   {display_name, name}
 
 str = """
@@ -31,8 +31,8 @@ str = """
 ;dragon
 """
 window.spec_list = str.split("\n").map (str)->
-  [display_name, name] = str.split(';').map((t)->t.trim())
-  display_name = display_name or name.replace(/_/g, ' ').capitalize()
+  [display_name, name] = str.split(";").map((t)->t.trim())
+  display_name = display_name or name.replace(/_/g, " ").capitalize()
   {display_name, name}
 
 str = """
@@ -88,8 +88,8 @@ str = """
 50005;                   ;techies            ;5;mech          ;goblin
 """
 # window.unit_list = str.split("\n").map (str)->
-#   [id, display_name, type, level, _class, spec] = str.split(';').map((t)->t.trim())
-#   display_name = display_name or type.replace(/_/g, ' ')
+#   [id, display_name, type, level, _class, spec] = str.split(";").map((t)->t.trim())
+#   display_name = display_name or type.replace(/_/g, " ")
 #   if id
 #     id = +id
 #   else
@@ -128,4 +128,69 @@ window.dev_script_gen = (opt = {})->
     #{id} add-units-list
     """
   
-  res_list.join '\n\n'
+  res_list.join "\n\n"
+
+window.unit_type2image_hash = {}
+window.unit_id_hash = {}
+unit_type_hash = {}
+for unit in unit_list
+  unit_type_hash[unit.type] = unit
+  unit_id_hash[unit.id] = unit
+  img = new Image
+  do (img)->
+    img.onload = ()->
+      img.loaded = true
+  img.src = "/img/dota/#{unit.type}_icon.png"
+  unit_type2image_hash[unit.type] = img
+# factory for battle units
+window.battle_unit_create = (opt)->
+  {
+    type
+    side
+    grid_x
+    grid_y
+    star_lvl
+  } = opt
+  if !blueprint = unit_type_hash[type]
+    perr "can't create unit #{type}"
+    return null
+  
+  side ?= 0
+  # we should not display unit with uninitialized coords
+  grid_x ?= -1
+  grid_y ?= -1
+  
+  ret = new emulator.Unit
+  ret.x = grid_x*battle_board_cell_size_unit + battle_board_cell_size_unit_2
+  ret.y = grid_y*battle_board_cell_size_unit + battle_board_cell_size_unit_2
+  ret.side = side
+  
+  ret.hp100 = blueprint.hp*100
+  ret.mp100 = blueprint.mana*100
+  # ret.mp_reg100 = blueprint.mana_regen
+  
+  ret.hp_max100 = ret.hp100
+  ret.mp_max100 = ret.mp100
+  # TODO support damage random range
+  ret.ad100 = blueprint.attack_damage_max*100
+  ret.as    = blueprint.attack_rate*100
+  ret.ar    = blueprint.attack_range
+  ret.ar2   = ret.ar*ret.ar
+  ret.armor = blueprint.armor
+  
+  # user LATER
+  ret.spec = blueprint.spec
+  ret.class= blueprint.class
+  
+  ret.type = blueprint.type
+  ret.display_name = blueprint.display_name
+  ret.move_type = blueprint.move_type
+  
+  # TODO fix me
+  ret.fsm_ref = emulator.fsm_craft {attack_type: "melee"}
+  
+  # inject
+  ret.star_lvl = star_lvl
+  
+  ret
+  

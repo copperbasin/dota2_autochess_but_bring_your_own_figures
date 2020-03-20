@@ -13,6 +13,15 @@ module.exports =
     
     return
   
+  componentWillUpdate : (next_props, next_state)->
+    @controller.readonly = next_props.readonly
+    @controller.on_change = next_props.on_change
+    if @props.state != next_props.state
+      @controller.state = next_props.state
+      window.debug_shop_state = @controller.state
+      @controller.refresh()
+    return
+  
   render : ()->
     @controller.props_update @props
     table
